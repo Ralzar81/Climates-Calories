@@ -1,0 +1,50 @@
+{
+    "ModTitle": "Climates & Calories",
+    "ModVersion": "1.3.0",
+    "ModAuthor": "Ralzar",
+    "ContactInfo": "https://forums.dfworkshop.net/memberlist.php?mode=viewprofile&u=1922",
+    "DFUnity_Version": "0.10.23",
+    "ModDescription": "Introduces temperature effects based on climates, seasons, weather and clothes etc. Also adds food items and starvation effects.",
+    "GUID": "7975b109-1381-485b-bdfd-8d076bb5d0c9",
+    "Files": [
+        "Assets/Game/Mods/Climates & Calories/ClimateCalories.cs",
+        "Assets/Game/Mods/Climates & Calories/AdviceText.cs",
+        "Assets/Game/Mods/Climates & Calories/Hunting.cs",
+        "Assets/Game/Mods/Climates & Calories/ItemsFood.cs",
+        "Assets/Game/Mods/Climates & Calories/ItemTemplates.json",
+        "Assets/Game/Mods/Climates & Calories/Textures/532_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/532_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/533_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/533_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/534_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/534_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/535_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/535_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/536_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/536_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/537_0-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/537_1-0.PNG",
+        "Assets/Game/Mods/Climates & Calories/Textures/539_0-0.png"
+    ],
+    "Contributes": null,
+    "Dependencies": [
+        {
+            "Name": "roleplayrealism",
+            "IsOptional": true,
+            "IsPeer": false,
+            "Version": null
+        },
+        {
+            "Name": "filling food",
+            "IsOptional": true,
+            "IsPeer": true,
+            "Version": "1.3.0"
+        },
+                {
+            "Name": "climates & cloaks",
+            "IsOptional": true,
+            "IsPeer": true,
+            "Version": "1.3.0"
+        }
+    ]
+}
