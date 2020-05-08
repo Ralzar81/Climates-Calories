@@ -202,5 +202,25 @@
         "worldTextureRecord": 0,
         "playerTextureArchive": 539,
         "playerTextureRecord": 0
+    },
+    {
+        "index": 540,
+        "name": "Tent",
+        "baseWeight": 10,
+        "hitPoints": 100,
+        "capacityOrTarget": 0,
+        "basePrice": 500,
+        "enchantmentPoints": 0,
+        "rarity": 1,
+        "variants": 0,
+        "drawOrderOrEffect": 0,
+        "isBluntWeapon": false,
+        "isLiquid": false,
+        "isOneHanded": false,
+        "isIngredient": false,
+        "worldTextureArchive": 515,
+        "worldTextureRecord": 0,
+        "playerTextureArchive": 0,
+        "playerTextureRecord": 0
     }
 ]

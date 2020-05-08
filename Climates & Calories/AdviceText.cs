@@ -19,7 +19,6 @@ namespace ClimatesCalories
         static PlayerEnterExit playerEnterExit = GameManager.Instance.PlayerEnterExit;
         static PlayerGPS playerGPS = GameManager.Instance.PlayerGPS;
         static PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-        static EntityEffectManager playerEffectManager = playerEntity.EntityBehaviour.GetComponent<EntityEffectManager>();
         static RaceTemplate playerRace = playerEntity.RaceTemplate;
 
         static private int wetCount = ClimateCalories.wetCount;
@@ -61,8 +60,6 @@ namespace ClimatesCalories
             string suitabilityTxt = " is suitable for you.";
 
             int climate = playerGPS.CurrentClimateIndex;
-            int birthRaceID = playerEntity.BirthRaceTemplate.ID;
-            int liveRaceID = playerEntity.RaceTemplate.ID;
 
             bool isRaining = GameManager.Instance.WeatherManager.IsRaining;
             bool isOvercast = GameManager.Instance.WeatherManager.IsOvercast;
