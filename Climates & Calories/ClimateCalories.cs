@@ -26,7 +26,7 @@ using DaggerfallConnect.Utility;
 namespace ClimatesCalories
 {
     [FullSerializer.fsObject("v1")]
-    public class ClimateClaloriesSaveData
+    public class ClimateCaloriesSaveData
     {
         public int WetCount;
         public int AttCount;
@@ -54,12 +54,12 @@ namespace ClimatesCalories
 
         public Type SaveDataType
         {
-            get { return typeof(ClimateClaloriesSaveData); }
+            get { return typeof(ClimateCaloriesSaveData); }
         }
 
         public object NewSaveData()
         {
-            return new ClimateClaloriesSaveData
+            return new ClimateCaloriesSaveData
             {
                 WetCount = 0,
                 AttCount = 0,
@@ -78,7 +78,7 @@ namespace ClimatesCalories
 
         public object GetSaveData()
         {
-            return new ClimateClaloriesSaveData
+            return new ClimateCaloriesSaveData
             {
                 WetCount = wetCount,
                 AttCount = attCount,
@@ -97,7 +97,7 @@ namespace ClimatesCalories
 
         public void RestoreSaveData(object saveData)
         {
-            var climateCaloriesSaveData = (ClimateClaloriesSaveData)saveData;
+            var climateCaloriesSaveData = (ClimateCaloriesSaveData)saveData;
             wetCount = climateCaloriesSaveData.WetCount;
             attCount = climateCaloriesSaveData.AttCount;
             FillingFood.starvDays = climateCaloriesSaveData.Starvation;
@@ -230,9 +230,9 @@ namespace ClimatesCalories
         static public bool gotDrink = WaterToDrink();
         static public int thirst = 0;
         static public bool camping = false;
+        static private bool groundSleep = false;
+        static private int sleepTemp = 0;
         static private bool playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
-
-
 
         static private float tickTimeInterval;
         const float stdInterval = 0.5f;
@@ -254,6 +254,8 @@ namespace ClimatesCalories
         
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
                 return;
+
+            
 
             FillingFood.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             FillingFood.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
@@ -398,11 +400,7 @@ namespace ClimatesCalories
                 //When fast traveling counters resets.
                 else if (DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD)
                 {
-                    if (travelCounter <= 5)
-                    {
-                        travelCounter++;
-                    }
-                    else if (travelCounter > 5)
+                    if (travelCounter > 1)
                     {
                         txtCount = txtIntervals;
                         wetCount = 0;
@@ -410,14 +408,43 @@ namespace ClimatesCalories
                         playerEntity.LastTimePlayerAteOrDrankAtTavern = FillingFood.gameMinutes - 260;
                         FillingFood.hungry = false;
                         FillingFood.starving = false;
+                        FillingFood.starvDays = 0;
+                        travelCounter = 0;
                     }
+
                     FillingFood.FoodRotCounter();
+                }
+                //Sleeping outside. Since there is no way currently to interrupt Rest, except with mosnters, I keep track of temp during sleep and appy effects when waking up.
+                else if (GameManager.IsGamePaused && !playerEnterExit.IsPlayerInsideBuilding && !Hunting.huntingTime)
+                {
+                    FillingFood.FoodRotCounter();
+                    FillingFood.Starvation();
+                    txtCount = txtIntervals;
+                    wetCount += wetWeather + wetEnvironment;
+                    if (natTemp > 10)
+                    {
+                        wetCount -= (natTemp / 10);
+                        wetCount = Mathf.Max(wetCount, 0);
+                    }
+                    if (wetCount >= 1 && wetWeather == 0 && wetEnvironment == 0)
+                    {
+                        wetCount--;
+                    }
+
+                    TemperatureCalculator();
+                    if (absTemp > sleepTemp)
+                    {
+                        sleepTemp = absTemp;
+                        if (sleepTemp > 10)
+                        {
+                            groundSleep = true;
+                        }
+                    }
+                    
                 }
                 //If not camping, bed sleeping or traveling, apply normal C&C effects.
                 else
-                {
-                    travelCounter = 0;
-
+                {                   
                     //Code specifically to mess with FuzzyBean. Anyone else reading this: ignore it and don't tell Fuzzy ;)
                     if (playerEntity.Name == "Daddy Azura" && playerEnterExit.IsPlayerInsideDungeon && cloakly && !GameManager.Instance.AreEnemiesNearby())
                     {
@@ -430,6 +457,10 @@ namespace ClimatesCalories
                         }
                     }
 
+                    Debug.Log("[Climates & Calories] NORMAL ROUND");
+
+                    travelCounter = 0;
+
                     FillingFood.FoodRotCounter();
                     FillingFood.FoodRotter();
                     FillingFood.Starvation();
@@ -437,6 +468,20 @@ namespace ClimatesCalories
                     playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
                     int fatigueDmg = 0;
                     camping = false;
+
+                    if (groundSleep)
+                    {
+                        groundSleep = false;
+                        DaggerfallUI.AddHUDText("Sleeping outside was rough...");
+                        Debug.Log("[Climates & Calories] sleepTemp = " + sleepTemp.ToString());
+                        if (sleepTemp >= playerEntity.CurrentFatigue)
+                        {
+                            sleepTemp = playerEntity.CurrentFatigue - 1;
+                            Debug.Log("[Climates & Calories] adjusted sleepTemp = " + sleepTemp.ToString());
+                        }
+                        fatigueDmg += sleepTemp;
+                        sleepTemp = 0;
+                    }
 
                     TemperatureCalculator();
                     wetCount += wetWeather + wetEnvironment;
@@ -1858,6 +1903,7 @@ namespace ClimatesCalories
             hunger = gameMinutes - ateTime;
             starvDays = (hunger / 1440);
             starvCounter += (int)starvDays;
+            rations = RationsToEat();
             if (hunger > 240)
             {
                 hungry = true;

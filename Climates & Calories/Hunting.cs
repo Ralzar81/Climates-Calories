@@ -20,26 +20,25 @@ namespace ClimatesCalories
 
     public class Hunting
     {
-
         static int climate;
         static int luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
         public static int huntingTimer = 0;
         static bool lucky = false;
         static bool vLucky = false;
         static bool vUnLucky = false;
+        public static bool huntingTime = false;
 
         //Uses OnNewMagicRound to check for animals to hunt.
         public static void HuntingRound()
         {
             if (!DaggerfallUnity.Instance.WorldTime.Now.IsNight &&
                 !GameManager.IsGamePaused &&
-                !GameManager.Instance.PlayerGPS.IsPlayerInTown() &&
+                !GameManager.Instance.PlayerGPS.IsPlayerInLocationRect &&
                 huntingTimer <= 0)
             {
                 luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
                 int roll = Random.Range(1, 200) - luckMod;
                 climate = GameManager.Instance.PlayerGPS.CurrentClimateIndex;
-
                 if (roll < 2)
                 {
                     int lckRoll = Random.Range(1, 110);
@@ -884,8 +883,10 @@ namespace ClimatesCalories
 
         private static void TimeSkip()
         {
+            huntingTime = true;
             int skipAmount = Mathf.Max(Random.Range(20, 120) - (GameManager.Instance.PlayerEntity.Stats.LiveSpeed / 10), 5);
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
+            huntingTime = false;
         }
 
         private static void SpawnBeast()
@@ -893,79 +894,51 @@ namespace ClimatesCalories
 
             int roll = Random.Range(0,11);
             GameObject player = GameManager.Instance.PlayerObject;
+            MobileTypes beast = MobileTypes.None;
+            int count = 1;
 
             //Desert monster
             if ((climate == (int)MapsFile.Climates.Desert || climate == (int)MapsFile.Climates.Desert2) || climate == (int)MapsFile.Climates.Subtropical)
             {
                 if (roll < 2)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GiantScorpion, 1);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 2, MobileTypes.GiantScorpion, 1);
-                    GameObject[] mobile3 = GameObjectHelper.CreateFoeGameObjects(player.transform.position + player.transform.forward * 5, MobileTypes.GiantScorpion, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position + (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
-                    mobile3[0].transform.LookAt(mobile2[0].transform.position - (mobile3[0].transform.position + player.transform.position));
-                    mobile3[0].SetActive(true);
+                    beast = MobileTypes.GiantScorpion;
+                    count = 3;
                 }
                 else if (roll < 4)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GiantScorpion, 2);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 2, MobileTypes.GiantScorpion, 2);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position - (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
+                    beast = MobileTypes.GiantScorpion;
+                    count = 2;
                 }
                 else if (roll < 9)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GiantScorpion, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.GiantScorpion;
                 }
                 else
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 6, MobileTypes.Dragonling_Alternate, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Dragonling_Alternate;
                 }
             }
             //Swamp Monster
-            else if ((climate == (int)MapsFile.Climates.Swamp || climate == (int)MapsFile.Climates.Rainforest) && roll < 5)
+            else if ((climate == (int)MapsFile.Climates.Swamp || climate == (int)MapsFile.Climates.Rainforest))
             {
                 if (roll < 2)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GrizzlyBear, 1);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 2, MobileTypes.GrizzlyBear, 1);
-                    GameObject[] mobile3 = GameObjectHelper.CreateFoeGameObjects(player.transform.position + player.transform.forward * 4, MobileTypes.Spriggan, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position + (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
-                    mobile3[0].transform.LookAt(mobile2[0].transform.position - (mobile3[0].transform.position + player.transform.position));
-                    mobile3[0].SetActive(true);
+                    beast = MobileTypes.GrizzlyBear;
+                    count = 3;
                 }
                 else if (roll < 4)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.Spider, 2);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.Spider, 2);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position - (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
+                    beast = MobileTypes.Spider;
+                    count = 2;
                 }
                 else if (roll < 9)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.Spider, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Spider;
                 }
                 else
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 6, MobileTypes.Dragonling_Alternate, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Dragonling_Alternate;
                 }
             }
             //Forest Monster
@@ -974,36 +947,21 @@ namespace ClimatesCalories
                 
                 if (roll < 2)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 6, MobileTypes.GrizzlyBear, 1);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 2, MobileTypes.GrizzlyBear, 1);
-                    GameObject[] mobile3 = GameObjectHelper.CreateFoeGameObjects(player.transform.position + player.transform.forward * 4, MobileTypes.Spriggan, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position + (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
-                    mobile3[0].transform.LookAt(mobile2[0].transform.position - (mobile3[0].transform.position + player.transform.position));
-                    mobile3[0].SetActive(true);
+                    beast = MobileTypes.GrizzlyBear;
+                    count = 3;
                 }
                 else if (roll < 4)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GrizzlyBear, 2);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GrizzlyBear, 2);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position - (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
+                    beast = MobileTypes.GrizzlyBear;
+                    count = 2;
                 }
                 else if (roll < 9)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.GrizzlyBear, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Spriggan;
                 }
                 else
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 6, MobileTypes.Dragonling_Alternate, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Dragonling_Alternate;
                 }
 
             }
@@ -1012,40 +970,41 @@ namespace ClimatesCalories
             {
                 if (roll < 2)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.SabertoothTiger, 1);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 2, MobileTypes.SabertoothTiger, 1);
-                    GameObject[] mobile3 = GameObjectHelper.CreateFoeGameObjects(player.transform.position + player.transform.forward * 4, MobileTypes.Spriggan, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position + (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
-                    mobile3[0].transform.LookAt(mobile2[0].transform.position - (mobile3[0].transform.position + player.transform.position));
-                    mobile3[0].SetActive(true);
+                    beast = MobileTypes.SabertoothTiger;
+                    count = 3;
                 }
                 else if (roll < 4)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.SabertoothTiger, 2);
-                    GameObject[] mobile2 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.SabertoothTiger, 2);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
-                    mobile2[0].transform.LookAt(mobile2[0].transform.position - (mobile2[0].transform.position + player.transform.position));
-                    mobile2[0].SetActive(true);
+                    beast = MobileTypes.SabertoothTiger;
+                    count = 2;
                 }
                 else if (roll < 9)
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 4, MobileTypes.SabertoothTiger, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.SabertoothTiger;
                 }
                 else
                 {
-                    GameObject[] mobile1 = GameObjectHelper.CreateFoeGameObjects(player.transform.position - player.transform.forward * 6, MobileTypes.Dragonling_Alternate, 1);
-                    mobile1[0].transform.LookAt(mobile1[0].transform.position + (mobile1[0].transform.position + player.transform.position));
-                    mobile1[0].SetActive(true);
+                    beast = MobileTypes.Dragonling_Alternate;
                 }
             }
 
-
+            
+            GameObject[] mobiles = GameObjectHelper.CreateFoeGameObjects(player.transform.position, beast, count);
+            mobiles[0].transform.position = player.transform.position - player.transform.forward * 4;
+            mobiles[0].transform.LookAt(player.transform.position);
+            mobiles[0].SetActive(true);
+            if (count > 1)
+            {
+                mobiles[1].transform.position = player.transform.position - player.transform.forward * 6;
+                mobiles[1].transform.LookAt(player.transform.position);
+                mobiles[1].SetActive(true);
+            }
+            if (count == 3)
+            {
+                mobiles[2].transform.position = player.transform.position + player.transform.forward * 6;
+                mobiles[2].transform.LookAt(player.transform.position);
+                mobiles[2].SetActive(true);
+            }
         }
     }
 }

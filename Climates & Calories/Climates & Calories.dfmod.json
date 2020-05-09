@@ -24,7 +24,7 @@
         "Assets/Game/Mods/Climates & Calories/Textures/536_1-0.PNG",
         "Assets/Game/Mods/Climates & Calories/Textures/537_0-0.PNG",
         "Assets/Game/Mods/Climates & Calories/Textures/537_1-0.PNG",
-        "Assets/Game/Mods/Climates & Calories/Textures/539_0-0.png",
+        "Assets/Game/Mods/Climates & Calories/Textures/539_0-0.PNG",
         "Assets/Game/Mods/Climates & Calories/Textures/50_7-0.PNG",
         "Assets/Game/Mods/Climates & Calories/Textures/67_10-0.PNG",
         "Assets/Game/Mods/Climates & Calories/Materials/515_0-0.mat",
@@ -34,7 +34,8 @@
         "Assets/Game/Mods/Climates & Calories/Models/41606.prefab"
     ],
     "Contributes": null,
-    "Dependencies": [
+    "Dependencies":
+    [
         {
             "Name": "roleplayrealism",
             "IsOptional": true,
@@ -52,6 +53,12 @@
             "IsOptional": true,
             "IsPeer": true,
             "Version": "1.3.0"
+        },
+        {
+            "Name": "tedioustravel",
+            "IsOptional": false,
+            "IsPeer": false,
+            "Version": null
         }
     ]
 }
