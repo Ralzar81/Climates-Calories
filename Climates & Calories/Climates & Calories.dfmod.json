@@ -33,14 +33,12 @@
         "Assets/Game/Mods/Climates & Calories/Models/blb_tent.fbx",
         "Assets/Game/Mods/Climates & Calories/Models/41606.prefab"
     ],
-    "Contributes": null,
-    "Dependencies":
-    [
+    "Dependencies": [
         {
             "Name": "roleplayrealism",
             "IsOptional": true,
             "IsPeer": false,
-            "Version": null
+            "Version": "0.10"
         },
         {
             "Name": "filling food",
@@ -57,8 +55,7 @@
         {
             "Name": "tedioustravel",
             "IsOptional": false,
-            "IsPeer": false,
-            "Version": null
+            "IsPeer": false
         }
     ]
 }

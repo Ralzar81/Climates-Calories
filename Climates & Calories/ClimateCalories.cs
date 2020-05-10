@@ -234,7 +234,7 @@ namespace ClimatesCalories
         static private int sleepTemp = 0;
         static private bool playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
 
-        static private float tickTimeInterval;
+        static private float tickTimeHunting;
         const float stdInterval = 0.5f;
         static private bool lookingUp = false;
         bool statusClosed = true;
@@ -253,9 +253,7 @@ namespace ClimatesCalories
             }
         
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
-                return;
-
-            
+                return;            
 
             FillingFood.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             FillingFood.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
@@ -576,13 +574,15 @@ namespace ClimatesCalories
                     if (txtCount >= txtIntervals) { txtCount = 0; }
 
                     //To counter a bug where you have 0 Stamina with no averse effects.
-                    if (playerEntity.CurrentFatigue <= 1)
+                    if (playerEntity.CurrentFatigue <= 10)
                     {
                         if (tediousTravel)
                         {
-                            GameObject go = GameObject.Find("tedious");
-                            TediousTravel.TediousTravel tt = go.GetComponent<TediousTravel.TediousTravel>();
-                            tt.InterruptFastTravel();
+                            TediousTravel.TediousTravelControllMenu tcm = DaggerfallUI.UIManager.TopWindow as TediousTravel.TediousTravelControllMenu;
+                            if (tcm != null)
+                            {
+                                tcm.CloseWindow();
+                            }
                         }
                         playerEntity.DecreaseHealth(2);
                         if (!GameManager.IsGamePaused) { DaggerfallUI.AddHUDText("You are exhausted and need to rest..."); }

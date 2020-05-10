@@ -27,6 +27,8 @@ namespace ClimatesCalories
         static bool vLucky = false;
         static bool vUnLucky = false;
         public static bool huntingTime = false;
+        public static bool hunting = false;
+
 
         //Uses OnNewMagicRound to check for animals to hunt.
         public static void HuntingRound()
@@ -34,55 +36,61 @@ namespace ClimatesCalories
             if (!DaggerfallUnity.Instance.WorldTime.Now.IsNight &&
                 !GameManager.IsGamePaused &&
                 !GameManager.Instance.PlayerGPS.IsPlayerInLocationRect &&
+                !GameManager.Instance.PlayerEnterExit.IsPlayerInside &&
                 huntingTimer <= 0)
             {
                 luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
                 int roll = Random.Range(1, 200) - luckMod;
-                climate = GameManager.Instance.PlayerGPS.CurrentClimateIndex;
-                if (roll < 2)
-                {
-                    int lckRoll = Random.Range(1, 110);
-                    lucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck ? true : false;
-                    vLucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck/2 ? true : false;
-                    vUnLucky = lckRoll > GameManager.Instance.PlayerEntity.Stats.LiveLuck + 30 ? true : false;
 
-                    huntingTimer = 500;
+                if (roll < 200)
+                {
                     if (ClimateCalories.tediousTravel)
                     {
-                        GameObject go = GameObject.Find("tedious");
-                        TediousTravel.TediousTravel tt = go.GetComponent<TediousTravel.TediousTravel>();
                         TediousTravel.TediousTravelControllMenu tcm = DaggerfallUI.UIManager.TopWindow as TediousTravel.TediousTravelControllMenu;
-                        tt.InterruptFastTravel();
                         if (tcm != null)
                         {
                             tcm.CloseWindow();
                         }
                     }
-                    if ((climate == (int)MapsFile.Climates.Desert || climate == (int)MapsFile.Climates.Desert2))
-                    {
-                        DesertHuntingRoll();
-                    }
-                    else if (climate == (int)MapsFile.Climates.Subtropical && roll < 3)
-                    {
-                        SubtropicalHuntingRoll();
-                    }
-                    else if ((climate == (int)MapsFile.Climates.Swamp || climate == (int)MapsFile.Climates.Rainforest))
-                    {
-                        SwampHuntingRoll();
-                    }
-                    else if ((climate == (int)MapsFile.Climates.Woodlands || climate == (int)MapsFile.Climates.HauntedWoodlands))
-                    {
-                        WoodsHuntingRoll();
-                    }
-                    else if ((climate == (int)MapsFile.Climates.Mountain || climate == (int)MapsFile.Climates.MountainWoods))
-                    {
-                        MountainHuntingRoll();
-                    }
+                    HuntCheck();
                 }
             }
             else if (huntingTimer > 0)
             {
                 huntingTimer--;
+            }
+        }        
+
+        public static void HuntCheck()
+        {
+            int lckRoll = Random.Range(1, 110);
+            lucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck ? true : false;
+            vLucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck / 2 ? true : false;
+            vUnLucky = lckRoll > GameManager.Instance.PlayerEntity.Stats.LiveLuck + 30 ? true : false;
+
+            huntingTimer = Random.Range(100, 500);
+
+            climate = GameManager.Instance.PlayerGPS.CurrentClimateIndex;
+
+            if ((climate == (int)MapsFile.Climates.Desert || climate == (int)MapsFile.Climates.Desert2))
+            {
+                DesertHuntingRoll();
+            }
+            else if (climate == (int)MapsFile.Climates.Subtropical)
+            {
+                SubtropicalHuntingRoll();
+            }
+            else if ((climate == (int)MapsFile.Climates.Swamp || climate == (int)MapsFile.Climates.Rainforest))
+            {
+                SwampHuntingRoll();
+            }
+            else if ((climate == (int)MapsFile.Climates.Woodlands || climate == (int)MapsFile.Climates.HauntedWoodlands))
+            {
+                WoodsHuntingRoll();
+            }
+            else if ((climate == (int)MapsFile.Climates.Mountain || climate == (int)MapsFile.Climates.MountainWoods))
+            {
+                MountainHuntingRoll();
             }
         }
 
@@ -90,7 +98,7 @@ namespace ClimatesCalories
         //Method for checking hunting in desert. Going to either DesertHunting_OnButtonClick or DesertWater_OnButtonClick.
         private static void DesertHuntingRoll()
         {
-            int roll = Random.Range(1,11);
+            int roll = Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7 && ClimateCalories.gotDrink)
             {
@@ -100,7 +108,7 @@ namespace ClimatesCalories
                             "There might be a source of water here where you could refill",
                             "your waterskin.",
                             "",
-                            "Do you wish to spend some time searching for water?"                           
+                            "Do you wish to spend some time searching for water?"
                         };
                 huntingPopUp.SetText(message);
                 huntingPopUp.OnButtonClick += DesertWater_OnButtonClick;
@@ -117,10 +125,10 @@ namespace ClimatesCalories
                         };
                 huntingPopUp.SetText(message);
                 huntingPopUp.OnButtonClick += DesertHunting_OnButtonClick;
-            }            
+            }
             huntingPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
             huntingPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
-            
+
             huntingPopUp.Show();
         }
         //When clicking yes, do a DesertHuntingCheck
@@ -323,7 +331,7 @@ namespace ClimatesCalories
                 }
             }
             else
-            {            
+            {
                 //Very UnLucky.
                 if (vUnLucky)
                 {
@@ -379,7 +387,7 @@ namespace ClimatesCalories
             }
             else
             {
-            //Very Unlucky
+                //Very Unlucky
                 if (vUnLucky)
                 {
 
@@ -467,12 +475,12 @@ namespace ClimatesCalories
             }
             else if (playerHasBow)
             {
-                skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Stealth)/2;
-                skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Archery)/2;
+                skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Stealth) / 2;
+                skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Archery) / 2;
                 if (skillRoll < skillSum - 30)
                 {
                     int meat = Random.Range(2, 5);
-                    string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", "but you manage to loose several more arrows before they are out of range.", "", "You pick up the "+meat.ToString()+ " dead birds and spend some time preparing them." };
+                    string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", "but you manage to loose several more arrows before they are out of range.", "", "You pick up the " + meat.ToString() + " dead birds and spend some time preparing them." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
                 }
@@ -540,7 +548,7 @@ namespace ClimatesCalories
                 if (skillRoll < skillSum)
                 {
                     int meat = Random.Range(1, 2);
-                    string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "Another ripple in the water appear and you release an arrow.","", "You pull your scaly prey out of the swamp and butcher it." };
+                    string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "Another ripple in the water appear and you release an arrow.", "", "You pull your scaly prey out of the swamp and butcher it." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
                 }
@@ -571,7 +579,7 @@ namespace ClimatesCalories
                     }
                     else
                     {
-                        string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "You strike the water and some kind of fanged lizard", "explodes out of the water, sinking its teeth into your arm.", "You manage to shake it off and it disappears back into the water.","", "You hope it was not poisonous..." };
+                        string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "You strike the water and some kind of fanged lizard", "explodes out of the water, sinking its teeth into your arm.", "You manage to shake it off and it disappears back into the water.", "", "You hope it was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
                         DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
                     }
@@ -610,7 +618,7 @@ namespace ClimatesCalories
             huntingPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
             huntingPopUp.Show();
         }
-        //When clicking yes, skip 1 hour and do a SwampHuntCheck
+        //When clicking yes, skip 1 hour and do a WoodsHuntCheck
         private static void WoodsHunt_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
@@ -643,7 +651,7 @@ namespace ClimatesCalories
                 skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Archery) / 2;
 
                 //Success
-                if (skillRoll+30 < skillSum)
+                if (skillRoll + 30 < skillSum)
                 {
                     int meat = Random.Range(4, 6);
                     string[] messages = new string[] { "You track a set of deer prints for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The deer takes a few steps and collapses." };
@@ -778,7 +786,7 @@ namespace ClimatesCalories
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(1);
                 }
-              //Fail
+                //Fail
                 else if (skillRoll >= skillSum)
                 {
                     if (skillRoll < 50)
@@ -892,7 +900,7 @@ namespace ClimatesCalories
         private static void SpawnBeast()
         {
 
-            int roll = Random.Range(0,11);
+            int roll = Random.Range(0, 11);
             GameObject player = GameManager.Instance.PlayerObject;
             MobileTypes beast = MobileTypes.None;
             int count = 1;
@@ -944,7 +952,7 @@ namespace ClimatesCalories
             //Forest Monster
             else if (climate == (int)MapsFile.Climates.Woodlands || climate == (int)MapsFile.Climates.HauntedWoodlands)
             {
-                
+
                 if (roll < 2)
                 {
                     beast = MobileTypes.GrizzlyBear;
@@ -988,20 +996,22 @@ namespace ClimatesCalories
                 }
             }
 
-            
+            //GameObjectHelper.CreateFoeSpawner(true, beast, count, 8, 20);
+
+            int range = Random.Range(2,8);
             GameObject[] mobiles = GameObjectHelper.CreateFoeGameObjects(player.transform.position, beast, count);
-            mobiles[0].transform.position = player.transform.position - player.transform.forward * 4;
+            mobiles[0].transform.position = player.transform.position - player.transform.forward * range;
             mobiles[0].transform.LookAt(player.transform.position);
             mobiles[0].SetActive(true);
             if (count > 1)
             {
-                mobiles[1].transform.position = player.transform.position - player.transform.forward * 6;
+                mobiles[1].transform.position = player.transform.position - player.transform.forward * (range + 2);
                 mobiles[1].transform.LookAt(player.transform.position);
                 mobiles[1].SetActive(true);
             }
             if (count == 3)
             {
-                mobiles[2].transform.position = player.transform.position + player.transform.forward * 6;
+                mobiles[2].transform.position = player.transform.position + player.transform.forward * (range + 2);
                 mobiles[2].transform.LookAt(player.transform.position);
                 mobiles[2].SetActive(true);
             }
