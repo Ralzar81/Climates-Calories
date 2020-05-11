@@ -578,10 +578,10 @@ namespace ClimatesCalories
                     {
                         if (tediousTravel)
                         {
-                            TediousTravel.TediousTravelControllMenu tcm = DaggerfallUI.UIManager.TopWindow as TediousTravel.TediousTravelControllMenu;
-                            if (tcm != null)
+                            UserInterfaceWindow topWindow = (UserInterfaceWindow)DaggerfallUI.UIManager.TopWindow;
+                            if (topWindow.GetType().ToString() == "TediousTravel.TediousTravelControllMenu")
                             {
-                                tcm.CloseWindow();
+                                topWindow.CloseWindow();
                             }
                         }
                         playerEntity.DecreaseHealth(2);

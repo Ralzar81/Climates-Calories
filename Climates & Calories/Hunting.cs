@@ -14,6 +14,7 @@ using DaggerfallWorkshop.Utility;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using System.Collections.Generic;
+using DaggerfallWorkshop.Game.UserInterface;
 
 namespace ClimatesCalories
 {
@@ -46,10 +47,10 @@ namespace ClimatesCalories
                 {
                     if (ClimateCalories.tediousTravel)
                     {
-                        TediousTravel.TediousTravelControllMenu tcm = DaggerfallUI.UIManager.TopWindow as TediousTravel.TediousTravelControllMenu;
-                        if (tcm != null)
+                        UserInterfaceWindow topWindow = (UserInterfaceWindow) DaggerfallUI.UIManager.TopWindow;
+                        if (topWindow.GetType().ToString() == "TediousTravel.TediousTravelControllMenu")
                         {
-                            tcm.CloseWindow();
+                            topWindow.CloseWindow();
                         }
                     }
                     HuntCheck();
