@@ -47,7 +47,7 @@ namespace ClimatesCalories
             drink = ClimateCalories.gotDrink;
             hunger = FillingFood.hunger;
             starving = FillingFood.starving;
-            rations = FillingFood.rations;
+            rations = FillingFood.RationsToEat();
         }
 
         public static string TxtClimate()
@@ -464,7 +464,10 @@ namespace ClimatesCalories
                     {
                         adviceTxt = "The rays of the sun burns your face and neck!";
                     }
-                    adviceTxt = "Your exposed skin sizzles in the deadly sunlight!";
+                    else
+                    {
+                        adviceTxt = "Your exposed skin sizzles in the deadly sunlight!";
+                    }
                 }
             }
 
@@ -497,7 +500,7 @@ namespace ClimatesCalories
             }
             else if (hunger < 180)
             {
-                foodString = "You are still feeling envigorated from your last meal.";
+                foodString = "You are still feeling invigorated from your last meal.";
             }
             else if (hunger < 240)
             {
@@ -517,7 +520,7 @@ namespace ClimatesCalories
             }
             else if (encPc > 0.6)
             {
-                return "Your burdened is quite heavy.";
+                return "Your burden is quite heavy.";
             }
             return "You are not overburdened.";
         }

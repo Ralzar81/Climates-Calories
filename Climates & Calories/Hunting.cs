@@ -43,11 +43,11 @@ namespace ClimatesCalories
                 luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
                 int roll = Random.Range(1, 200) - luckMod;
 
-                if (roll < 200)
+                if (roll < 2)
                 {
                     if (ClimateCalories.tediousTravel)
                     {
-                        UserInterfaceWindow topWindow = (UserInterfaceWindow) DaggerfallUI.UIManager.TopWindow;
+                        UserInterfaceWindow topWindow = (UserInterfaceWindow)DaggerfallUI.UIManager.TopWindow;
                         if (topWindow.GetType().ToString() == "TediousTravel.TediousTravelControllMenu")
                         {
                             topWindow.CloseWindow();

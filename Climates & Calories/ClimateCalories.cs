@@ -145,6 +145,7 @@ namespace ClimatesCalories
 
             StartGameBehaviour.OnStartGame += ClimatesCalories_OnStartGame;
             EntityEffectBroker.OnNewMagicRound += ClimatesCaloriesEffects_OnNewMagicRound;
+            EntityEffectBroker.OnNewMagicRound += FillingFood.FoodEffects_OnNewMagicRound;
 
             ItemHelper itemHelper = DaggerfallUnity.Instance.ItemHelper;
 
@@ -263,7 +264,6 @@ namespace ClimatesCalories
                 FillingFood.hungry = false;
                 FillingFood.starving = false;
                 FillingFood.starvDays = 0;
-                EntityEffectBroker.OnNewMagicRound += FillingFood.FoodEffects_OnNewMagicRound;
                 DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
             }
             else if (FillingFood.starvDays >= 1 && !FillingFood.starving)
@@ -327,6 +327,7 @@ namespace ClimatesCalories
             absTemp = Mathf.Abs(totalTemp);
             cloak = Cloak();
             hood = HoodUp();
+            FillingFood.rations = FillingFood.RationsToEat();
 
             AdviceText.AdviceDataUpdate();
         }
@@ -354,6 +355,12 @@ namespace ClimatesCalories
                 wetCount = 100;
                 EntityEffectBroker.OnNewMagicRound += Privateer_OnNewMagicRound;
             }
+            else
+            {
+                wetCount = 0;
+            }
+            GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531));
+            playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
         }
 
         private static void Privateer_OnNewMagicRound()
@@ -437,14 +444,13 @@ namespace ClimatesCalories
                         {
                             groundSleep = true;
                         }
-                    }
-                    
+                    }                    
                 }
                 //If not camping, bed sleeping or traveling, apply normal C&C effects.
                 else
                 {                   
                     //Code specifically to mess with FuzzyBean. Anyone else reading this: ignore it and don't tell Fuzzy ;)
-                    if (playerEntity.Name == "Daddy Azura" && playerEnterExit.IsPlayerInsideDungeon && cloakly && !GameManager.Instance.AreEnemiesNearby())
+                    if (playerEntity.Name == "Daddy Azura" && (playerEnterExit.IsPlayerInsideDungeon || playerEnterExit.IsPlayerInsideDungeonCastle || playerEnterExit.IsPlayerInsideSpecialArea) && cloakly && !GameManager.Instance.AreEnemiesNearby())
                     {
                         int roll = UnityEngine.Random.Range(0, 100);
                         if (roll > 90)
@@ -470,7 +476,7 @@ namespace ClimatesCalories
                     if (groundSleep)
                     {
                         groundSleep = false;
-                        DaggerfallUI.AddHUDText("Sleeping outside was rough...");
+                        DaggerfallUI.AddHUDText("Staying outside was rough...");
                         Debug.Log("[Climates & Calories] sleepTemp = " + sleepTemp.ToString());
                         if (sleepTemp >= playerEntity.CurrentFatigue)
                         {
@@ -613,7 +619,6 @@ namespace ClimatesCalories
 
         static bool WaterToDrink()
         {
-
             List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
             foreach (DaggerfallUnityItem skin in skins)
             {
@@ -722,7 +727,7 @@ namespace ClimatesCalories
         //If inside dungeon, the temperature effects is decreased.
         static int Dungeon(int natTemp)
         {
-            if (playerEnterExit.IsPlayerInsideDungeon)
+            if (playerEnterExit.IsPlayerInsideDungeon || playerEnterExit.IsPlayerInsideDungeonCastle || playerEnterExit.IsPlayerInsideSpecialArea)
             {
                 if (natTemp > -15)
                 {
@@ -1708,7 +1713,7 @@ namespace ClimatesCalories
             if (!wetPen) { return 0; }
             int temp = 0;
             wetEnvironment = 0;
-            if (GameManager.Instance.PlayerMotor.IsSwimming) { wetEnvironment = 300; }
+            if (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged) { wetEnvironment = 300; }
             if (playerIsWading) { wetEnvironment += 50; }
             if (wetCount > 0)
             {
@@ -1945,7 +1950,7 @@ namespace ClimatesCalories
             }
         }
 
-        static private bool RationsToEat()
+        static public bool RationsToEat()
         {
             List<DaggerfallUnityItem> sacks = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
             foreach (DaggerfallUnityItem sack in sacks)
@@ -2023,11 +2028,10 @@ namespace ClimatesCalories
                     foodCount = 0;
                 }
             }
-            else
+            else if (!hungry)
             {
                 hungry = true;
                 DaggerfallUI.AddHUDText("Your stomach rumbles...");
-                EntityEffectBroker.OnNewMagicRound -= FoodEffects_OnNewMagicRound;
             }
         }
     }
