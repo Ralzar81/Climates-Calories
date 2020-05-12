@@ -476,12 +476,17 @@ namespace ClimatesCalories
                     if (groundSleep)
                     {
                         groundSleep = false;
-                        DaggerfallUI.AddHUDText("Staying outside was rough...");
-                        Debug.Log("[Climates & Calories] sleepTemp = " + sleepTemp.ToString());
+                        if (playerEnterExit.IsPlayerInsideDungeon || playerEnterExit.IsPlayerInsideDungeonCastle || playerEnterExit.IsPlayerInsideSpecialArea)
+                        {
+                            DaggerfallUI.AddHUDText("You should find a campfire...");
+                        }
+                        else if (GameManager.Instance.PlayerGPS.IsPlayerInLocationRect)
+                        {
+                            DaggerfallUI.AddHUDText("Sleeping outside is rough...");
+                        }
                         if (sleepTemp >= playerEntity.CurrentFatigue)
                         {
                             sleepTemp = playerEntity.CurrentFatigue - 1;
-                            Debug.Log("[Climates & Calories] adjusted sleepTemp = " + sleepTemp.ToString());
                         }
                         fatigueDmg += sleepTemp;
                         sleepTemp = 0;
@@ -562,7 +567,7 @@ namespace ClimatesCalories
                     if (playerRace.ID != (int)Races.Argonian && playerRace.ID != (int)Races.Khajiit && !playerEntity.IsInBeastForm)
                     {
                         NakedDmg(natTemp);
-                        if (!playerIsWading & !GameManager.IsGamePaused)
+                        if (!playerIsWading && !GameManager.IsGamePaused && !playerEnterExit.IsPlayerInside)
                         {
                             FeetDmg(natTemp);
                         }
