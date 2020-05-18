@@ -31,6 +31,31 @@ namespace ClimatesCalories
         public static bool hunting = false;
 
 
+        private static bool PlayerHasBow()
+        {
+            bool hasSBowInv;
+            bool hasSBowHand;
+            bool hasLBowInv;
+            bool hasLBowHand;
+
+            DaggerfallUnityItem lHand = GameManager.Instance.PlayerEntity.ItemEquipTable.GetItem(EquipSlots.LeftHand);
+            DaggerfallUnityItem rHand = GameManager.Instance.PlayerEntity.ItemEquipTable.GetItem(EquipSlots.RightHand);
+
+            hasSBowInv = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null ? false : true;
+            hasLBowInv = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            hasSBowHand = lHand.TemplateIndex == (int)Weapons.Short_Bow ? false : true;
+            hasLBowHand = lHand.TemplateIndex == (int)Weapons.Long_Bow ? false : true;
+
+            if (hasSBowInv || hasLBowInv || hasSBowHand || hasLBowHand)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         //Uses OnNewMagicRound to check for animals to hunt.
         public static void HuntingRound()
         {
@@ -859,26 +884,7 @@ namespace ClimatesCalories
 
         static void RefillWater(float waterAmount)
         {
-            float wLeft = 0;
-            float skinRoom = 0;
-            float fill = 0;
-            List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Waterskin);
-            foreach (DaggerfallUnityItem skin in skins)
-            {
-                if (waterAmount <= 0)
-                {
-                    break;
-                }
-                if (skin.weightInKg < 2)
-                {
-                    wLeft = waterAmount - skin.weightInKg;
-                    skinRoom = 2 - skin.weightInKg;
-                    fill = Mathf.Min(skinRoom, wLeft);
-                    waterAmount -= fill;
-                    skin.weightInKg += Mathf.Min(fill, 2f);
-                    DaggerfallUI.AddHUDText("You refill your water.");
-                }
-            }
+            ClimateCalories.RefillWater(waterAmount);
         }
 
         private static void MovePlayer()

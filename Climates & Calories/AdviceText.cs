@@ -368,7 +368,14 @@ namespace ClimatesCalories
                 }
                 else if (wetCount > 19)
                 {
-                    adviceTxt = "Walking around cold and wet might be hazardous to your health.";
+                    if (isDungeon)
+                    {
+                        adviceTxt = "You should find a fire to help you get dry.";
+                    }
+                    else
+                    {
+                        adviceTxt = "Walking around cold and wet might be hazardous to your health.";
+                    }
                 }
                 else if (pureClothTemp < 30)
                 {
@@ -385,7 +392,7 @@ namespace ClimatesCalories
                         }
                         if (cloak2 == null)
                         {
-                            adviceTxt = "In this cold, it might help to put on a second cloak.";
+                            adviceTxt = "In this cold, you should wear thicker clothes or a second cloak.";
                         }
                     }
                     if (cloak2 != null)
@@ -399,7 +406,7 @@ namespace ClimatesCalories
                         }
                         if (cloak1 == null)
                         {
-                            adviceTxt = "In this cold, it might help to put on a second cloak.";
+                            adviceTxt = "In this cold, you should wear thicker clothes or a second cloak.";
                         }
                     }
                 }

@@ -38,6 +38,7 @@ namespace ClimatesCalories
         public DFPosition TentMapPixel;
         public bool TentDeployed;
         public Vector3 TentPosition;
+        public Vector3 FirePosition;
         public Quaternion TentRotation;
         public Matrix4x4 TentMatrix;
     }
@@ -91,7 +92,8 @@ namespace ClimatesCalories
                 TentDeployed = TentCamp.TentDeployed,
                 TentPosition = TentCamp.TentPosition,
                 TentRotation = TentCamp.TentRotation,
-                TentMatrix = TentCamp.TentMatrix
+                TentMatrix = TentCamp.TentMatrix,
+                FirePosition = TentCamp.FirePosition
             };
         }
 
@@ -110,6 +112,7 @@ namespace ClimatesCalories
             TentCamp.TentPosition = climateCaloriesSaveData.TentPosition;
             TentCamp.TentRotation = climateCaloriesSaveData.TentRotation;
             TentCamp.TentMatrix = climateCaloriesSaveData.TentMatrix;
+            TentCamp.FirePosition = climateCaloriesSaveData.FirePosition;
 
             if (TentCamp.TentDeployed)
             {
@@ -159,9 +162,19 @@ namespace ClimatesCalories
             DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_CampEquip, TentCamp.UseCampingEquipment);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
+            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Rations, ItemGroups.UselessItems2);
+            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Rations, UseRations);
+            PlayerActivate.RegisterCustomActivation(mod, 101, 0, CampfireActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 101, 5, CampfireActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 210, 0, CampfireActivation);
             PlayerActivate.RegisterCustomActivation(mod, 210, 1, CampfireActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41116, CampfireActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 212, 0, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 212, 2, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 212, 8, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 212, 9, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, TentCamp.PackUpTent);
         }
 
@@ -169,6 +182,40 @@ namespace ClimatesCalories
         {
             camping = true;
             DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+        }
+
+        private static void WaterSourceActivation(RaycastHit hit)
+        {
+            RefillWater(10);
+        }
+
+        private static void DryWaterSourceActivation(RaycastHit hit)
+        {
+            DaggerfallUI.AddHUDText("This fountain is dry as dust.");
+        }
+
+        public static bool UseWaterskin(DaggerfallUnityItem item, ItemCollection collection)
+        {
+            if (item.weightInKg <= 0.1)
+            {
+                DaggerfallUI.MessageBox(string.Format("You should find a tavern or another source of water to refill the skin." ));
+            }
+            else if (item.weightInKg <= 1)
+            {
+                DaggerfallUI.MessageBox(string.Format("Your waterskin is almost empty."));
+            }
+            else
+            {
+                DaggerfallUI.MessageBox(string.Format("When too hot, you will drink some water."));
+
+            }
+            return false;
+        }
+
+        public static bool UseRations(DaggerfallUnityItem item, ItemCollection collection)
+        {
+            DaggerfallUI.MessageBox(string.Format("When too hungry, you will eat some rations." ));
+            return false;
         }
 
         void Awake()
@@ -239,7 +286,7 @@ namespace ClimatesCalories
         const float stdInterval = 0.5f;
         static private bool lookingUp = false;
         bool statusClosed = true;
-        static int travelCounter = 0;
+        static int fastTravelTime = 0;
 
         void Start()
         {
@@ -255,7 +302,15 @@ namespace ClimatesCalories
         
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
                 return;            
-
+            if (fastTravelTime > 0 && !DaggerfallUI.Instance.FadeBehaviour.FadeInProgress)
+            {
+                playerEntity.LastTimePlayerAteOrDrankAtTavern = FillingFood.gameMinutes - 260;
+                FillingFood.hungry = false;
+                FillingFood.starving = false;
+                FillingFood.starvDays = 0;
+                FillingFood.FoodRot(fastTravelTime);
+                fastTravelTime = 0;
+            }
             FillingFood.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             FillingFood.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
             FillingFood.hunger = FillingFood.gameMinutes - FillingFood.ateTime;
@@ -405,21 +460,12 @@ namespace ClimatesCalories
                 //When fast traveling counters resets.
                 else if (DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD)
                 {
-                    if (travelCounter > 1)
-                    {
-                        txtCount = txtIntervals;
-                        wetCount = 0;
-                        attCount = 0;
-                        playerEntity.LastTimePlayerAteOrDrankAtTavern = FillingFood.gameMinutes - 260;
-                        FillingFood.hungry = false;
-                        FillingFood.starving = false;
-                        FillingFood.starvDays = 0;
-                        travelCounter = 0;
-                    }
-
-                    FillingFood.FoodRotCounter();
+                    txtCount = txtIntervals;
+                    wetCount = 0;
+                    attCount = 0;
+                    fastTravelTime++;
                 }
-                //Sleeping outside. Since there is no way currently to interrupt Rest, except with mosnters, I keep track of temp during sleep and appy effects when waking up.
+                //Sleeping outside. Since there is no way currently to interrupt Rest, except with monsters, I keep track of temp during sleep and apply effects when waking up.
                 else if (GameManager.IsGamePaused && !playerEnterExit.IsPlayerInsideBuilding && !Hunting.huntingTime)
                 {
                     FillingFood.FoodRotCounter();
@@ -462,8 +508,6 @@ namespace ClimatesCalories
                     }
 
                     Debug.Log("[Climates & Calories] NORMAL ROUND");
-
-                    travelCounter = 0;
 
                     FillingFood.FoodRotCounter();
                     FillingFood.FoodRotter();
@@ -600,6 +644,7 @@ namespace ClimatesCalories
                     }
 
                     playerEntity.DecreaseFatigue(fatigueDmg, true);
+                    playerEntity.DecreaseMagicka(fatigueDmg);
 
                     //int starvDays = (int)FillingFood.starvDays;
                     //debuffValue = starvDays * 2;
@@ -629,7 +674,7 @@ namespace ClimatesCalories
             {
                 if (skin.weightInKg > 0.1)
                 {
-                    if (skin.weightInKg < 2 && (GameManager.Instance.PlayerMotor.IsSwimming || playerIsWading || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Tavern || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Temple))
+                    if (skin.weightInKg < 2 && (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged || playerIsWading || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Tavern || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Temple))
                     {
                         skin.weightInKg = 2;
                         DaggerfallUI.AddHUDText("You refill your water.");
@@ -649,21 +694,35 @@ namespace ClimatesCalories
                 {
                     skin.weightInKg -= 0.1f;
                     if (skin.weightInKg <= 0.1)
+                    {
                         skin.shortName = "Empty Waterskin";
                         DaggerfallUI.AddHUDText("You drain your waterskin.");
+                    }
+                    else
+                    {
+                        DaggerfallUI.AddHUDText("You take a sip from your waterskin.");
+                    }
                     break;
                 }
             }
         }
 
-        static void RefillWater(float waterAmount)
+        public static void RefillWater(float waterAmount, bool activation = false)
         {
             float wLeft = 0;
             float skinRoom = 0;
             float fill = 0;
-            List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Waterskin);
+            List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
+            if (activation = true && skins == null)
+            {
+                DaggerfallUI.AddHUDText("You have no skins to fill.");
+            }
             foreach (DaggerfallUnityItem skin in skins)
             {
+                if (waterAmount <= 0)
+                {
+                    break;
+                }
                 if (skin.weightInKg < 2)
                 {
                     wLeft = waterAmount - skin.weightInKg;
@@ -1922,13 +1981,20 @@ namespace ClimatesCalories
             {
                 starving = true;
             }
-            if (hungry && starving && rations && starvCounter > 5)
+            else
             {
-                EatRation();
+                starving = false;
             }
-            else if (!rations && starving && starvCounter > 5)
+            if (starving)
             {
-                playerEntity.DecreaseFatigue(1);
+                if (rations && starvCounter > 24)
+                {
+                    EatRation();
+                }
+                else if (!rations && starvCounter > 5)
+                {
+                    playerEntity.DecreaseFatigue(1);
+                }
             }
             else if (!starving)
             {
@@ -1945,10 +2011,14 @@ namespace ClimatesCalories
                 {
                     sack.weightInKg -= 0.1f;
                     playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 250;
+                    if (!GameManager.IsGamePaused)
+                    {
+                        DaggerfallUI.AddHUDText("You eat some rations.");
+                    }
                     if (sack.weightInKg <= 0.1)
                     {
                         GameManager.Instance.PlayerEntity.Items.RemoveItem(sack);
-                        DaggerfallUI.AddHUDText("You empty your ration sack.");
+                        DaggerfallUI.MessageBox(string.Format("You empty your sack of rations." ));
                     }
                     break;
                 }
@@ -1968,7 +2038,7 @@ namespace ClimatesCalories
             return false;
         }
 
-        static private void FoodRot()
+        static public void FoodRot(int rotBonus = 0)
         {
             bool rotted = false;
             int rotChance = 0;
@@ -1979,13 +2049,14 @@ namespace ClimatesCalories
                     DaggerfallUnityItem item = playerItems.GetItem(i);
                     if (item is AbstractItemFood)
                     {
-                        rotChance = UnityEngine.Random.Range(1, 100);
+                        rotChance = UnityEngine.Random.Range(1, 100) + rotBonus;
                         AbstractItemFood food = item as AbstractItemFood;
                         if (rotChance > food.maxCondition && !food.RotFood())
                         {
                             food.RotFood();
                             rotted = true;
                         }
+                        rotChance = 0;
                     }
                 }
             }
@@ -2050,6 +2121,8 @@ namespace ClimatesCalories
         public static Quaternion TentRotation;
         public static GameObject Tent = null;
         public static Matrix4x4 TentMatrix;
+        public static GameObject Fire = null;
+        public static Vector3 FirePosition;
 
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
@@ -2058,9 +2131,22 @@ namespace ClimatesCalories
         {
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInside == true)
             {
-                string[] messages = new string[] { "You can not pitch your tent indoors." };
-                ClimateCalories.TextPopup(messages);
-                return false;
+                if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
+                {
+                    item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
+                    if (item.currentCondition < 5)
+                    {
+                        DaggerfallUI.AddHUDText("Your camping equipment is falling apart...");
+                    }
+                    DaggerfallUI.MessageBox(string.Format("You light a fire."));
+                    LightCampFire(false);
+                    return true;
+                }
+                else
+                {
+                    DaggerfallUI.MessageBox(string.Format("You can not set up your tent indoors."));
+                    return false;
+                }
             }
             else if (TentDeployed == false)
             {
@@ -2069,13 +2155,13 @@ namespace ClimatesCalories
                 {
                     DaggerfallUI.AddHUDText("Your camping equipment is falling apart...");
                 }
+                DaggerfallUI.MessageBox(string.Format("You prepare your camp site." ));
                 DeployTent();
                 return true;
             }
             else
             {
-                string[] messages = new string[] { "You have already pitched your tent." };
-                ClimateCalories.TextPopup(messages);
+                DaggerfallUI.MessageBox(string.Format("You have already set up your tent." ));
                 return false;
             }
         }
@@ -2117,6 +2203,7 @@ namespace ClimatesCalories
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             Tent.SetActive(true);
             TentDeployed = true;
+            LightCampFire();
         }
 
         public static void PackUpTent(RaycastHit hit)
@@ -2124,7 +2211,7 @@ namespace ClimatesCalories
             DaggerfallMessageBox tentPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (hit.transform.gameObject.GetInstanceID() == Tent.GetInstanceID())
             {
-                string[] message = { "Pack up your tent?" };
+                string[] message = { "Do you wish to rest in your tent?" };
                 tentPopUp.SetText(message);
                 tentPopUp.OnButtonClick += TentPopUp_OnButtonClick;
                 tentPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
@@ -2133,8 +2220,7 @@ namespace ClimatesCalories
             }
             else
             {
-                string[] message = { "This is not your tent." };
-                ClimateCalories.TextPopup(message);
+                DaggerfallUI.MessageBox(string.Format("This is not your tent." ));
             }
             
         }
@@ -2143,18 +2229,62 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
-                UnityEngine.Object.Destroy(Tent);
-                Tent = null;
-                TentDeployed = false;
-                TentMatrix = new Matrix4x4();
                 sender.CloseWindow();
-            }
-            else
-            {
                 IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
                 ClimateCalories.camping = true;
                 uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
             }
+            else
+            {
+                UnityEngine.Object.Destroy(Tent);
+                Tent = null;
+                UnityEngine.Object.Destroy(Fire);
+                Fire = null;
+                TentDeployed = false;
+                TentMatrix = new Matrix4x4();
+                sender.CloseWindow();
+                DaggerfallUI.MessageBox(string.Format("You pack up your tent."));
+            }
+        }
+
+        private static void LightCampFire(bool tent = true)
+        {
+            GameObject origin;
+            if (tent)
+            {
+                origin = Tent;
+                FirePosition = origin.transform.position + (origin.transform.forward * 3) + (origin.transform.up * 0.5f);
+                RaycastHit hit;
+                Ray ray = new Ray(FirePosition, Vector3.down);
+                if (Physics.Raycast(ray, out hit, 10))
+                {
+                    Debug.Log("Setting fire position in relation to tent.");
+                    FirePosition = hit.point + (origin.transform.up * 0.7f);
+                }
+                else
+                {
+                    Debug.Log("Fireplace out of bounds");
+                }
+            }
+            else
+            {                
+                origin = GameManager.Instance.PlayerObject;
+                FirePosition = origin.transform.position + (origin.transform.forward * 3) + (origin.transform.up * 3);
+                RaycastHit hit;
+                Ray ray = new Ray(FirePosition, Vector3.down);
+                if (Physics.Raycast(ray, out hit, 10))
+                {
+                    Debug.Log("Setting fire position in relation to player.");
+                    FirePosition = hit.point + (origin.transform.up * 0.7f);
+                }
+                else
+                {
+                    Debug.Log("Fireplace out of bounds");
+                }
+            }
+            Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
+            Fire.transform.SetPositionAndRotation(FirePosition, TentRotation);
+            Fire.SetActive(true);            
         }
     }
 }
