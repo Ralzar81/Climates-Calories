@@ -36,7 +36,7 @@ namespace ClimatesCalories
         public int HuntingTimer;
         public int RotDays;
         public DFPosition TentMapPixel;
-        public bool TentDeployed;
+        public bool CampDeployed;
         public Vector3 TentPosition;
         public Vector3 FirePosition;
         public Quaternion TentRotation;
@@ -70,7 +70,7 @@ namespace ClimatesCalories
                 HuntingTimer = 0,
                 RotDays = 0,
                 TentMapPixel = new DFPosition(),
-                TentDeployed = false,
+                CampDeployed = false,
                 TentPosition = new Vector3(),
                 TentRotation = new Quaternion(),
                 TentMatrix = new Matrix4x4()
@@ -89,7 +89,7 @@ namespace ClimatesCalories
                 HuntingTimer = Hunting.huntingTimer,
                 RotDays = FillingFood.daysRot,
                 TentMapPixel = TentCamp.TentMapPixel,
-                TentDeployed = TentCamp.TentDeployed,
+                CampDeployed = TentCamp.CampDeployed,
                 TentPosition = TentCamp.TentPosition,
                 TentRotation = TentCamp.TentRotation,
                 TentMatrix = TentCamp.TentMatrix,
@@ -108,15 +108,19 @@ namespace ClimatesCalories
             Hunting.huntingTimer = climateCaloriesSaveData.HuntingTimer;
             FillingFood.daysRot = climateCaloriesSaveData.RotDays;
             TentCamp.TentMapPixel = climateCaloriesSaveData.TentMapPixel;
-            TentCamp.TentDeployed = climateCaloriesSaveData.TentDeployed;
+            TentCamp.CampDeployed = climateCaloriesSaveData.CampDeployed;
             TentCamp.TentPosition = climateCaloriesSaveData.TentPosition;
             TentCamp.TentRotation = climateCaloriesSaveData.TentRotation;
             TentCamp.TentMatrix = climateCaloriesSaveData.TentMatrix;
             TentCamp.FirePosition = climateCaloriesSaveData.FirePosition;
-
-            if (TentCamp.TentDeployed)
+            Debug.Log("RestoreSaveData CampDeployed = " + TentCamp.CampDeployed.ToString());
+            if (TentCamp.CampDeployed)
             {
                 TentCamp.DeployTent(true);
+            }
+            else
+            {
+                TentCamp.ClearTentFire();
             }
         }
 
@@ -2116,7 +2120,7 @@ namespace ClimatesCalories
     {
 
         public static DFPosition TentMapPixel = null;
-        public static bool TentDeployed = false;
+        public static bool CampDeployed = false;
         public static Vector3 TentPosition;
         public static Quaternion TentRotation;
         public static GameObject Tent = null;
@@ -2149,7 +2153,7 @@ namespace ClimatesCalories
                     return false;
                 }
             }
-            else if (TentDeployed == false)
+            else if (CampDeployed == false)
             {
                 item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
                 if (item.currentCondition < 5)
@@ -2203,7 +2207,7 @@ namespace ClimatesCalories
             //Set the model's position in the world
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             Tent.SetActive(true);
-            TentDeployed = true;
+            CampDeployed = true;
             LightCampFire();
         }
 
@@ -2237,15 +2241,29 @@ namespace ClimatesCalories
             }
             else
             {
-                UnityEngine.Object.Destroy(Tent);
-                Tent = null;
-                UnityEngine.Object.Destroy(Fire);
-                Fire = null;
-                TentDeployed = false;
+                ClearTentFire();
                 TentMatrix = new Matrix4x4();
                 sender.CloseWindow();
                 DaggerfallUI.MessageBox(string.Format("You pack up your tent."));
             }
+        }
+
+        public static void ClearTentFire()
+        {
+            Debug.Log("Running ClearTentFire");
+            if (Tent != null)
+            {
+                UnityEngine.Object.Destroy(Tent);
+                Tent = null;
+                Debug.Log("Clearing Tent");
+            }
+            if (Fire != null)
+            {
+                UnityEngine.Object.Destroy(Fire);
+                Fire = null;
+                Debug.Log("Clearing Fire");
+            }
+            CampDeployed = false;
         }
 
         private static void LightCampFire(bool tent = true)
@@ -2296,6 +2314,8 @@ namespace ClimatesCalories
             }
             AddTorchAudioSource(Fire);
             AddLight(DaggerfallUnity.Instance, Fire, lightsNode.transform);
+
+            CampDeployed = true;
         }
 
         private static GameObject AddLight(DaggerfallUnity dfUnity, GameObject obj, Transform parent)
