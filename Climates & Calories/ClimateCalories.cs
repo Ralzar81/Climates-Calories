@@ -2123,6 +2123,7 @@ namespace ClimatesCalories
         public static Matrix4x4 TentMatrix;
         public static GameObject Fire = null;
         public static Vector3 FirePosition;
+        public static bool FireDeployed = false;
 
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
@@ -2267,7 +2268,7 @@ namespace ClimatesCalories
                 }
             }
             else
-            {                
+            {
                 origin = GameManager.Instance.PlayerObject;
                 FirePosition = origin.transform.position + (origin.transform.forward * 3) + (origin.transform.up * 3);
                 RaycastHit hit;
@@ -2284,7 +2285,44 @@ namespace ClimatesCalories
             }
             Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
             Fire.transform.SetPositionAndRotation(FirePosition, TentRotation);
-            Fire.SetActive(true);            
+            Fire.SetActive(true);
+            AddTorchAudioSource(Fire);
+            GameObject lightsNode = new GameObject("Lights");
+            lightsNode.transform.parent = Fire.transform;
+            Light light = Fire.GetComponent<Light>();
+            if (light != null)
+            {
+                light.range = 50;
+            }
+            AddTorchAudioSource(Fire);
+            AddLight(DaggerfallUnity.Instance, Fire, lightsNode.transform);
+        }
+
+        private static GameObject AddLight(DaggerfallUnity dfUnity, GameObject obj, Transform parent)
+        {
+            // Spawn light gameobject
+            float range = 5;
+            Vector3 position = FirePosition;
+            GameObject go = GameObjectHelper.InstantiatePrefab(dfUnity.Option_DungeonLightPrefab.gameObject, string.Empty, parent, position);
+            Light light = go.GetComponent<Light>();
+            if (light != null)
+            {
+                light.range = range * 3;
+            }
+
+            return go;
+        }
+
+        private static void AddTorchAudioSource(GameObject go)
+        {
+            // Apply looping burning sound to flaming torches and fires
+            // Set to linear rolloff or the burning sound is audible almost everywhere
+            DaggerfallAudioSource c = go.AddComponent<DaggerfallAudioSource>();
+            c.AudioSource.dopplerLevel = 0;
+            c.AudioSource.rolloffMode = AudioRolloffMode.Linear;
+            c.AudioSource.maxDistance = 5f;
+            c.AudioSource.volume = 0.7f;
+            c.SetSound(SoundClips.Burning, AudioPresets.LoopIfPlayerNear);
         }
     }
 }
