@@ -36,9 +36,9 @@ namespace ClimatesCalories
         public int HuntingTimer;
         public int RotDays;
         public DFPosition TentMapPixel;
-        public bool CampDeployed;
+        public bool TentPlaced;
         public Vector3 TentPosition;
-        public Vector3 FirePosition;
+        //public Vector3 FirePosition;
         public Quaternion TentRotation;
         public Matrix4x4 TentMatrix;
     }
@@ -70,7 +70,7 @@ namespace ClimatesCalories
                 HuntingTimer = 0,
                 RotDays = 0,
                 TentMapPixel = new DFPosition(),
-                CampDeployed = false,
+                TentPlaced = false,
                 TentPosition = new Vector3(),
                 TentRotation = new Quaternion(),
                 TentMatrix = new Matrix4x4()
@@ -88,12 +88,11 @@ namespace ClimatesCalories
                 Starving = FillingFood.starving,
                 HuntingTimer = Hunting.huntingTimer,
                 RotDays = FillingFood.daysRot,
-                TentMapPixel = TentCamp.TentMapPixel,
-                CampDeployed = TentCamp.CampDeployed,
-                TentPosition = TentCamp.TentPosition,
-                TentRotation = TentCamp.TentRotation,
-                TentMatrix = TentCamp.TentMatrix,
-                FirePosition = TentCamp.FirePosition
+                TentMapPixel = Camping.CampMapPixel,
+                TentPlaced = Camping.CampDeployed,
+                TentPosition = Camping.TentPosition,
+                TentRotation = Camping.TentRotation,
+                TentMatrix = Camping.TentMatrix,
             };
         }
 
@@ -107,20 +106,16 @@ namespace ClimatesCalories
             FillingFood.starving = climateCaloriesSaveData.Starving;
             Hunting.huntingTimer = climateCaloriesSaveData.HuntingTimer;
             FillingFood.daysRot = climateCaloriesSaveData.RotDays;
-            TentCamp.TentMapPixel = climateCaloriesSaveData.TentMapPixel;
-            TentCamp.CampDeployed = climateCaloriesSaveData.CampDeployed;
-            TentCamp.TentPosition = climateCaloriesSaveData.TentPosition;
-            TentCamp.TentRotation = climateCaloriesSaveData.TentRotation;
-            TentCamp.TentMatrix = climateCaloriesSaveData.TentMatrix;
-            TentCamp.FirePosition = climateCaloriesSaveData.FirePosition;
-            Debug.Log("RestoreSaveData CampDeployed = " + TentCamp.CampDeployed.ToString());
-            if (TentCamp.CampDeployed)
+            Camping.CampMapPixel = climateCaloriesSaveData.TentMapPixel;
+            Camping.CampDeployed = climateCaloriesSaveData.TentPlaced;
+            Camping.TentPosition = climateCaloriesSaveData.TentPosition;
+            Camping.TentRotation = climateCaloriesSaveData.TentRotation;
+            Camping.TentMatrix = climateCaloriesSaveData.TentMatrix;
+
+            Camping.DestroyCamp();
+            if (Camping.CampDeployed)
             {
-                TentCamp.DeployTent(true);
-            }
-            else
-            {
-                TentCamp.ClearTentFire();
+                Camping.DeployTent(true);
             }
         }
 
@@ -163,7 +158,7 @@ namespace ClimatesCalories
             itemHelper.RegisterCustomItem(ItemSaltedFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemSaltedFish));
             itemHelper.RegisterCustomItem(ItemMeat.templateIndex, ItemGroups.UselessItems2, typeof(ItemMeat));
 
-            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_CampEquip, TentCamp.UseCampingEquipment);
+            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_CampEquip, Camping.UseCampEquip);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
             DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
@@ -179,7 +174,7 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 212, 8, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 9, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 41606, TentCamp.PackUpTent);
+            PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.PackUpTent);
         }
 
         private static void CampfireActivation(RaycastHit hit)
@@ -2113,236 +2108,6 @@ namespace ClimatesCalories
                 hungry = true;
                 DaggerfallUI.AddHUDText("Your stomach rumbles...");
             }
-        }
-    }
-
-    public class TentCamp
-    {
-
-        public static DFPosition TentMapPixel = null;
-        public static bool CampDeployed = false;
-        public static Vector3 TentPosition;
-        public static Quaternion TentRotation;
-        public static GameObject Tent = null;
-        public static Matrix4x4 TentMatrix;
-        public static GameObject Fire = null;
-        public static Vector3 FirePosition;
-        public static bool FireDeployed = false;
-
-        public const int tentModelID = 41606;
-        public const int templateIndex_Tent = 515;
-
-        public static bool UseCampingEquipment(DaggerfallUnityItem item, ItemCollection collection)
-        {
-            if (GameManager.Instance.PlayerEnterExit.IsPlayerInside == true)
-            {
-                if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
-                {
-                    item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
-                    if (item.currentCondition < 5)
-                    {
-                        DaggerfallUI.AddHUDText("Your camping equipment is falling apart...");
-                    }
-                    DaggerfallUI.MessageBox(string.Format("You light a fire."));
-                    LightCampFire(false);
-                    return true;
-                }
-                else
-                {
-                    DaggerfallUI.MessageBox(string.Format("You can not set up your tent indoors."));
-                    return false;
-                }
-            }
-            else if (CampDeployed == false)
-            {
-                item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
-                if (item.currentCondition < 5)
-                {
-                    DaggerfallUI.AddHUDText("Your camping equipment is falling apart...");
-                }
-                DaggerfallUI.MessageBox(string.Format("You prepare your camp site." ));
-                DeployTent();
-                return true;
-            }
-            else
-            {
-                DaggerfallUI.MessageBox(string.Format("You have already set up your tent." ));
-                return false;
-            }
-        }
-
-        private static void SetTentPositionAndRotation()
-        {
-            GameObject player = GameManager.Instance.PlayerObject;
-            TentPosition = player.transform.position + (player.transform.forward * 3);
-            TentMatrix = player.transform.localToWorldMatrix;
-
-            RaycastHit hit;
-            Ray ray = new Ray(TentPosition, Vector3.down);
-            if (Physics.Raycast(ray, out hit, 10))
-            {
-                Debug.Log("Setting tent position and rotation");
-                TentPosition = hit.point;
-                TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-            }
-            else
-            {
-                Debug.Log("Setting tent position and rotation failed");
-            }
-        }
-
-        public static void DeployTent(bool fromSave = false)
-        {
-            if (fromSave == false)
-            {
-                TentMapPixel = GameManager.Instance.PlayerGPS.CurrentMapPixel;
-                SetTentPositionAndRotation();
-            }
-            //Attempt to load a model replacement
-            Tent = MeshReplacement.ImportCustomGameobject(tentModelID, null, TentMatrix);
-            if (Tent == null)
-            {
-                Tent = GameObjectHelper.CreateDaggerfallMeshGameObject(tentModelID, null);
-            }
-            //Set the model's position in the world
-            Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
-            Tent.SetActive(true);
-            CampDeployed = true;
-            LightCampFire();
-        }
-
-        public static void PackUpTent(RaycastHit hit)
-        {
-            DaggerfallMessageBox tentPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            if (hit.transform.gameObject.GetInstanceID() == Tent.GetInstanceID())
-            {
-                string[] message = { "Do you wish to rest in your tent?" };
-                tentPopUp.SetText(message);
-                tentPopUp.OnButtonClick += TentPopUp_OnButtonClick;
-                tentPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-                tentPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
-                tentPopUp.Show();
-            }
-            else
-            {
-                DaggerfallUI.MessageBox(string.Format("This is not your tent." ));
-            }
-            
-        }
-
-        private static void TentPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
-        {
-            if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
-            {
-                sender.CloseWindow();
-                IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
-                ClimateCalories.camping = true;
-                uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
-            }
-            else
-            {
-                ClearTentFire();
-                TentMatrix = new Matrix4x4();
-                sender.CloseWindow();
-                DaggerfallUI.MessageBox(string.Format("You pack up your tent."));
-            }
-        }
-
-        public static void ClearTentFire()
-        {
-            Debug.Log("Running ClearTentFire");
-            if (Tent != null)
-            {
-                UnityEngine.Object.Destroy(Tent);
-                Tent = null;
-                Debug.Log("Clearing Tent");
-            }
-            if (Fire != null)
-            {
-                UnityEngine.Object.Destroy(Fire);
-                Fire = null;
-                Debug.Log("Clearing Fire");
-            }
-            CampDeployed = false;
-        }
-
-        private static void LightCampFire(bool tent = true)
-        {
-            GameObject origin;
-            if (tent)
-            {
-                origin = Tent;
-                FirePosition = origin.transform.position + (origin.transform.forward * 3) + (origin.transform.up * 0.5f);
-                RaycastHit hit;
-                Ray ray = new Ray(FirePosition, Vector3.down);
-                if (Physics.Raycast(ray, out hit, 10))
-                {
-                    Debug.Log("Setting fire position in relation to tent.");
-                    FirePosition = hit.point + (origin.transform.up * 0.7f);
-                }
-                else
-                {
-                    Debug.Log("Fireplace out of bounds");
-                }
-            }
-            else
-            {
-                origin = GameManager.Instance.PlayerObject;
-                FirePosition = origin.transform.position + (origin.transform.forward * 3) + (origin.transform.up * 3);
-                RaycastHit hit;
-                Ray ray = new Ray(FirePosition, Vector3.down);
-                if (Physics.Raycast(ray, out hit, 10))
-                {
-                    Debug.Log("Setting fire position in relation to player.");
-                    FirePosition = hit.point + (origin.transform.up * 0.7f);
-                }
-                else
-                {
-                    Debug.Log("Fireplace out of bounds");
-                }
-            }
-            Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
-            Fire.transform.SetPositionAndRotation(FirePosition, TentRotation);
-            Fire.SetActive(true);
-            AddTorchAudioSource(Fire);
-            GameObject lightsNode = new GameObject("Lights");
-            lightsNode.transform.parent = Fire.transform;
-            Light light = Fire.GetComponent<Light>();
-            if (light != null)
-            {
-                light.range = 50;
-            }
-            AddTorchAudioSource(Fire);
-            AddLight(DaggerfallUnity.Instance, Fire, lightsNode.transform);
-
-            CampDeployed = true;
-        }
-
-        private static GameObject AddLight(DaggerfallUnity dfUnity, GameObject obj, Transform parent)
-        {
-            // Spawn light gameobject
-            float range = 5;
-            Vector3 position = FirePosition;
-            GameObject go = GameObjectHelper.InstantiatePrefab(dfUnity.Option_DungeonLightPrefab.gameObject, string.Empty, parent, position);
-            Light light = go.GetComponent<Light>();
-            if (light != null)
-            {
-                light.range = range * 3;
-            }
-
-            return go;
-        }
-
-        private static void AddTorchAudioSource(GameObject go)
-        {
-            // Apply looping burning sound to flaming torches and fires
-            // Set to linear rolloff or the burning sound is audible almost everywhere
-            DaggerfallAudioSource c = go.AddComponent<DaggerfallAudioSource>();
-            c.AudioSource.dopplerLevel = 0;
-            c.AudioSource.rolloffMode = AudioRolloffMode.Linear;
-            c.AudioSource.maxDistance = 5f;
-            c.AudioSource.volume = 0.7f;
-            c.SetSound(SoundClips.Burning, AudioPresets.LoopIfPlayerNear);
         }
     }
 }
