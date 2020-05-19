@@ -164,23 +164,17 @@ namespace ClimatesCalories
             DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
             DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Rations, ItemGroups.UselessItems2);
             DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Rations, UseRations);
-            PlayerActivate.RegisterCustomActivation(mod, 101, 0, CampfireActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 101, 5, CampfireActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 210, 0, CampfireActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 210, 1, CampfireActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 41116, CampfireActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 101, 0, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 101, 5, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 210, 0, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 210, 1, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 41116, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 212, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 2, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 8, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 9, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
-            PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.PackUpTent);
-        }
-
-        private static void CampfireActivation(RaycastHit hit)
-        {
-            camping = true;
-            DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+            PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
         }
 
         private static void WaterSourceActivation(RaycastHit hit)
@@ -375,7 +369,7 @@ namespace ClimatesCalories
             natTemp = Resist(baseNatTemp);
             armorTemp = Armor(baseNatTemp);
             pureClothTemp = Clothes(natTemp);
-            charTemp = Resist(RaceTemp() + pureClothTemp + armorTemp - Water(natTemp)) + offSet;
+            charTemp = Resist(RaceTemp() + pureClothTemp + armorTemp - Water()) + offSet;
             natCharTemp = Resist(baseNatTemp + RaceTemp()) + offSet;
             totalTemp = ItemTemp(Dungeon(natTemp) + charTemp);
             absTemp = Mathf.Abs(totalTemp);
@@ -1771,16 +1765,18 @@ namespace ClimatesCalories
             return temp;
         }
 
-        static int Water(int natTemp)
+        static int Water()
         {
-            if (!wetPen) { return 0; }
             int temp = 0;
             wetEnvironment = 0;
             if (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged) { wetEnvironment = 300; }
             if (playerIsWading) { wetEnvironment += 50; }
             if (wetCount > 0)
-            {
-                if (wetCount > 300) { wetCount = 300; }
+            {                
+                if (wetCount > 300)
+                {
+                    wetCount = 300;
+                }
                 temp = (wetCount / 10);
             }
             return temp;

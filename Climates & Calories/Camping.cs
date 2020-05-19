@@ -79,6 +79,7 @@ namespace ClimatesCalories
             {
                 CampMapPixel = GameManager.Instance.PlayerGPS.CurrentMapPixel;
                 SetTentPositionAndRotation();
+                DaggerfallUI.MessageBox("You set up camp");
             }
             //Attempt to load a model replacement
             Tent = MeshReplacement.ImportCustomGameobject(tentModelID, null, TentMatrix);
@@ -96,7 +97,7 @@ namespace ClimatesCalories
             }
             else
             {
-                FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.7f);
+                FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
                 Tent.SetActive(true);
             }
             Fire.transform.SetPositionAndRotation(FirePosition, TentRotation);
@@ -109,25 +110,44 @@ namespace ClimatesCalories
             FireLit = true;
         }        
 
-        public static void PackUpTent(RaycastHit hit)
+        public static void RestOrPackTent(RaycastHit hit)
         {
-            DaggerfallMessageBox tentPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (hit.transform.gameObject.GetInstanceID() == Tent.GetInstanceID())
             {
-                string[] message = { "Do you wish to rest in your tent?" };
-                tentPopUp.SetText(message);
-                tentPopUp.OnButtonClick += TentPopUp_OnButtonClick;
-                tentPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-                tentPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
-                tentPopUp.Show();
+                string[] message = { "Do you wish to rest?" };
+                campPopUp.SetText(message);
+                campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
+                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+                campPopUp.Show();
             }
             else
             {
-                DaggerfallUI.MessageBox(string.Format("This is not your tent."));
+                DaggerfallUI.MessageBox("This is not your camp.");
             }
         }
 
-        private static void TentPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
+        public static void RestOrPackFire(RaycastHit hit)
+        {
+            DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            if (hit.transform.gameObject.GetInstanceID() == Fire.GetInstanceID())
+            {
+                string[] message = { "Do you wish to rest?" };
+                campPopUp.SetText(message);
+                campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
+                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+                campPopUp.Show();
+            }
+            else
+            {
+                ClimateCalories.camping = true;
+                DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+            }
+        }
+
+        private static void CampPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
@@ -138,15 +158,38 @@ namespace ClimatesCalories
             }
             else
             {
-                DestroyCamp();
-                CampDeployed = false;
-                TentMatrix = new Matrix4x4();
                 sender.CloseWindow();
-                DaggerfallUI.MessageBox(string.Format("You pack up your tent."));
+                PackOrLeaveCamp();
             }
         }
 
+        public static void PackOrLeaveCamp()
+        {
+            DaggerfallMessageBox packPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            string[] message = { "Do you wish to pack up your camp?" };
+            packPopUp.SetText(message);
+            packPopUp.OnButtonClick += PackPopUp_OnButtonClick;
+            packPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
+            packPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+            packPopUp.Show();
+        }
 
+        private static void PackPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
+        {
+            if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.No)
+            {
+                sender.CloseWindow();
+            }
+            else
+            {
+                DestroyCamp();
+                CampDeployed = false;
+                FireLit = false;
+                TentMatrix = new Matrix4x4();
+                sender.CloseWindow();
+                DaggerfallUI.MessageBox("You pack up your camp.");
+            }
+        }
 
 
         public static void DestroyCamp()
@@ -156,6 +199,7 @@ namespace ClimatesCalories
                 UnityEngine.Object.Destroy(Tent);
                 UnityEngine.Object.Destroy(Fire);
                 Tent = null;
+                Fire = null;
             }
         }
 
