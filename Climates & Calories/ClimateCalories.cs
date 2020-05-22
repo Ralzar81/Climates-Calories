@@ -19,7 +19,6 @@ using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Serialization;
 using System.Collections.Generic;
-using DaggerfallWorkshop.Utility.AssetInjection;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallConnect.Utility;
 
@@ -41,6 +40,7 @@ namespace ClimatesCalories
         //public Vector3 FirePosition;
         public Quaternion TentRotation;
         public Matrix4x4 TentMatrix;
+        public DaggerfallUnityItem DeployedTent;
     }
 
     public class ClimateCalories : MonoBehaviour, IHasModSaveData
@@ -73,7 +73,8 @@ namespace ClimatesCalories
                 TentPlaced = false,
                 TentPosition = new Vector3(),
                 TentRotation = new Quaternion(),
-                TentMatrix = new Matrix4x4()
+                TentMatrix = new Matrix4x4(),
+                DeployedTent = null
             };
         }
 
@@ -93,6 +94,7 @@ namespace ClimatesCalories
                 TentPosition = Camping.TentPosition,
                 TentRotation = Camping.TentRotation,
                 TentMatrix = Camping.TentMatrix,
+                DeployedTent = Camping.DeployedTent
             };
         }
 
@@ -111,6 +113,7 @@ namespace ClimatesCalories
             Camping.TentPosition = climateCaloriesSaveData.TentPosition;
             Camping.TentRotation = climateCaloriesSaveData.TentRotation;
             Camping.TentMatrix = climateCaloriesSaveData.TentMatrix;
+            Camping.DeployedTent = climateCaloriesSaveData.DeployedTent;
 
             Camping.DestroyCamp();
             if (Camping.CampDeployed)
@@ -148,6 +151,10 @@ namespace ClimatesCalories
             StartGameBehaviour.OnStartGame += ClimatesCalories_OnStartGame;
             EntityEffectBroker.OnNewMagicRound += ClimatesCaloriesEffects_OnNewMagicRound;
             EntityEffectBroker.OnNewMagicRound += FillingFood.FoodEffects_OnNewMagicRound;
+            PlayerEnterExit.OnTransitionInterior += Camping.Destroy_OnTransition;
+            PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
+            PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
+            PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
 
             ItemHelper itemHelper = DaggerfallUnity.Instance.ItemHelper;
 
@@ -169,10 +176,20 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 210, 0, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 210, 1, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 41116, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 41117, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 212, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 2, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 8, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 9, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 182, 1, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 182, 2, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 182, 3, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 182, 11, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 184, 16, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 186, 1, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 186, 2, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 186, 3, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 197, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
         }
@@ -261,7 +278,7 @@ namespace ClimatesCalories
         static public int baseNatTemp = Dungeon(Climate() + Month() + DayNight()) + Weather();
         static public int natTemp = Resist(baseNatTemp);
         static public int armorTemp = Armor(baseNatTemp);
-        static private int charTemp = Resist(RaceTemp() + Clothes(baseNatTemp) + armorTemp - Water(natTemp)) + offSet;
+        static private int charTemp = Resist(RaceTemp() + Clothes(baseNatTemp) + armorTemp - Water()) + offSet;
         static public int pureClothTemp = Clothes(baseNatTemp);
         static private int natCharTemp = Resist(baseNatTemp + RaceTemp()+ offSet);
         static public int totalTemp = natTemp + charTemp;
@@ -273,7 +290,7 @@ namespace ClimatesCalories
         static public bool camping = false;
         static private bool groundSleep = false;
         static private int sleepTemp = 0;
-        static private bool playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
+        static private bool playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.WaterWalking;
 
         static private float tickTimeHunting;
         const float stdInterval = 0.5f;
@@ -665,13 +682,12 @@ namespace ClimatesCalories
             List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
             foreach (DaggerfallUnityItem skin in skins)
             {
-                if (skin.weightInKg > 0.1)
+                if (skin.weightInKg < 2 && (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged || playerIsWading || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Temple))
                 {
-                    if (skin.weightInKg < 2 && (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged || playerIsWading || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Tavern || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Temple))
-                    {
-                        skin.weightInKg = 2;
-                        DaggerfallUI.AddHUDText("You refill your water.");
-                    }
+                    RefillWater(10);
+                }
+                if (skin.weightInKg > 0.1)
+                {                    
                     return true;
                 }
             }
@@ -716,13 +732,14 @@ namespace ClimatesCalories
                 {
                     break;
                 }
-                if (skin.weightInKg < 2)
+                else if (skin.weightInKg < 2)
                 {
                     wLeft = waterAmount - skin.weightInKg;
                     skinRoom = 2 - skin.weightInKg;
                     fill = Mathf.Min(skinRoom, wLeft);
                     waterAmount -= fill;
                     skin.weightInKg += Mathf.Min(fill, 2f);
+                    skin.shortName = "Waterskin";
                     DaggerfallUI.AddHUDText("You refill your water.");
                 }
             }

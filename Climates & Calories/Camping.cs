@@ -4,36 +4,13 @@
 // Author:          Ralzar
 
 using UnityEngine;
-using DaggerfallConnect;
 using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Utility;
-using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
-using DaggerfallWorkshop.Game.MagicAndEffects;
-using DaggerfallWorkshop.Game.Utility.ModSupport;
-using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
-using UnityEngine;
-using System;
 using DaggerfallWorkshop;
-using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using DaggerfallWorkshop.Game.Serialization;
-using System.Collections.Generic;
 using DaggerfallWorkshop.Utility.AssetInjection;
 using DaggerfallWorkshop.Game.UserInterface;
-using DaggerfallConnect.Utility;
-using System;
-using UnityEngine;
-using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Utility.ModSupport;
-using DaggerfallWorkshop.Utility.AssetInjection;
-using DaggerfallWorkshop.Game.UserInterface;
-using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using DaggerfallWorkshop.Game.Items;
-using DaggerfallWorkshop.Utility;
-using DaggerfallWorkshop;
-using DaggerfallWorkshop.Game.Serialization;
 using DaggerfallConnect.Utility;
 
 namespace ClimatesCalories
@@ -49,6 +26,7 @@ namespace ClimatesCalories
         public static GameObject Fire = null;
         public static Vector3 FirePosition;
         public static bool FireLit = false;
+        public static DaggerfallUnityItem DeployedTent;
 
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
@@ -63,6 +41,8 @@ namespace ClimatesCalories
             else if (!CampDeployed)
             {
                 item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
+                DeployedTent = item;
+                collection.RemoveItem(item);
                 DeployTent();
                 return true;
             }
@@ -131,14 +111,22 @@ namespace ClimatesCalories
         public static void RestOrPackFire(RaycastHit hit)
         {
             DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            if (hit.transform.gameObject.GetInstanceID() == Fire.GetInstanceID())
+            if (Fire != null)
             {
-                string[] message = { "Do you wish to rest?" };
-                campPopUp.SetText(message);
-                campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
-                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
-                campPopUp.Show();
+                if (hit.transform.gameObject.GetInstanceID() == Fire.GetInstanceID())
+                {
+                    string[] message = { "Do you wish to rest?" };
+                    campPopUp.SetText(message);
+                    campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                    campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
+                    campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+                    campPopUp.Show();
+                }
+                else
+                {
+                    ClimateCalories.camping = true;
+                    DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+                }
             }
             else
             {
@@ -183,6 +171,7 @@ namespace ClimatesCalories
             else
             {
                 DestroyCamp();
+                GameManager.Instance.PlayerEntity.Items.AddItem(DeployedTent);
                 CampDeployed = false;
                 FireLit = false;
                 TentMatrix = new Matrix4x4();
@@ -191,19 +180,23 @@ namespace ClimatesCalories
             }
         }
 
-
         public static void DestroyCamp()
         {
             if (Tent != null)
             {
-                UnityEngine.Object.Destroy(Tent);
-                UnityEngine.Object.Destroy(Fire);
+                Object.Destroy(Tent);
+                Object.Destroy(Fire);
                 Tent = null;
                 Fire = null;
             }
         }
 
+        public static void Destroy_OnTransition(PlayerEnterExit.TransitionEventArgs args)
+        {
 
+            DestroyCamp();
+            DeployedTent = null;
+        }
 
 
 

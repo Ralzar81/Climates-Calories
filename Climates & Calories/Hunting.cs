@@ -13,8 +13,8 @@ using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Utility;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using System.Collections.Generic;
 using DaggerfallWorkshop.Game.UserInterface;
+using System.Collections.Generic;
 
 namespace ClimatesCalories
 {
@@ -33,27 +33,12 @@ namespace ClimatesCalories
 
         private static bool PlayerHasBow()
         {
-            bool hasSBowInv;
-            bool hasSBowHand;
-            bool hasLBowInv;
-            bool hasLBowHand;
+            bool hasBow = false;
+            List<DaggerfallUnityItem> sBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow);
+            List<DaggerfallUnityItem> lBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow);
+            hasBow = sBow.Count > 0 || lBow.Count > 0 ? true : false;
 
-            DaggerfallUnityItem lHand = GameManager.Instance.PlayerEntity.ItemEquipTable.GetItem(EquipSlots.LeftHand);
-            DaggerfallUnityItem rHand = GameManager.Instance.PlayerEntity.ItemEquipTable.GetItem(EquipSlots.RightHand);
-
-            hasSBowInv = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null ? false : true;
-            hasLBowInv = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
-            hasSBowHand = lHand.TemplateIndex == (int)Weapons.Short_Bow ? false : true;
-            hasLBowHand = lHand.TemplateIndex == (int)Weapons.Long_Bow ? false : true;
-
-            if (hasSBowInv || hasLBowInv || hasSBowHand || hasLBowHand)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return hasBow;
         }
 
         //Uses OnNewMagicRound to check for animals to hunt.
