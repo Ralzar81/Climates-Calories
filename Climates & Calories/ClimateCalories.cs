@@ -40,7 +40,7 @@ namespace ClimatesCalories
         //public Vector3 FirePosition;
         public Quaternion TentRotation;
         public Matrix4x4 TentMatrix;
-        public DaggerfallUnityItem DeployedTent;
+        public int DeployedTentCondition;
     }
 
     public class ClimateCalories : MonoBehaviour, IHasModSaveData
@@ -74,7 +74,7 @@ namespace ClimatesCalories
                 TentPosition = new Vector3(),
                 TentRotation = new Quaternion(),
                 TentMatrix = new Matrix4x4(),
-                DeployedTent = null
+                DeployedTentCondition = 100
             };
         }
 
@@ -94,7 +94,7 @@ namespace ClimatesCalories
                 TentPosition = Camping.TentPosition,
                 TentRotation = Camping.TentRotation,
                 TentMatrix = Camping.TentMatrix,
-                DeployedTent = Camping.DeployedTent
+                DeployedTentCondition = Camping.CampDmg
             };
         }
 
@@ -113,7 +113,7 @@ namespace ClimatesCalories
             Camping.TentPosition = climateCaloriesSaveData.TentPosition;
             Camping.TentRotation = climateCaloriesSaveData.TentRotation;
             Camping.TentMatrix = climateCaloriesSaveData.TentMatrix;
-            Camping.DeployedTent = climateCaloriesSaveData.DeployedTent;
+            Camping.CampDmg = climateCaloriesSaveData.DeployedTentCondition;
 
             Camping.DestroyCamp();
             if (Camping.CampDeployed)
@@ -151,10 +151,10 @@ namespace ClimatesCalories
             StartGameBehaviour.OnStartGame += ClimatesCalories_OnStartGame;
             EntityEffectBroker.OnNewMagicRound += ClimatesCaloriesEffects_OnNewMagicRound;
             EntityEffectBroker.OnNewMagicRound += FillingFood.FoodEffects_OnNewMagicRound;
-            PlayerEnterExit.OnTransitionInterior += Camping.Destroy_OnTransition;
-            PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
-            PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
-            PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
+            //PlayerEnterExit.OnTransitionInterior += Camping.Destroy_OnTransition;
+            //PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
+            //PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
+            //PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
 
             ItemHelper itemHelper = DaggerfallUnity.Instance.ItemHelper;
 
@@ -803,13 +803,13 @@ namespace ClimatesCalories
         {
             if (playerEnterExit.IsPlayerInsideDungeon || playerEnterExit.IsPlayerInsideDungeonCastle || playerEnterExit.IsPlayerInsideSpecialArea)
             {
-                if (natTemp > -15)
+                if (natTemp > -20)
                 {
-                    natTemp = Mathf.Max((natTemp/2)-20, -15);
+                    natTemp = Mathf.Max((natTemp/2)-30, -20);
                 }
                 else
                 {
-                    natTemp = Mathf.Min((natTemp / 2) + 20, -15);
+                    natTemp = Mathf.Min((natTemp / 2) + 30, -20);
                 }
             }
             return natTemp;

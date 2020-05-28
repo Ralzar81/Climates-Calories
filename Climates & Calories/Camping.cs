@@ -26,30 +26,37 @@ namespace ClimatesCalories
         public static GameObject Fire = null;
         public static Vector3 FirePosition;
         public static bool FireLit = false;
-        public static DaggerfallUnityItem DeployedTent;
+        public static int CampDmg;
 
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
 
         public static bool UseCampEquip(DaggerfallUnityItem item, ItemCollection collection)
         {
+            if (CampDeployed)
+            {
+                DestroyCamp();
+            }
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInside && !GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
             {
                     DaggerfallUI.MessageBox("You can not set up your tent indoors.");
                     return false;
             }
-            else if (!CampDeployed)
-            {
-                item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
-                DeployedTent = item;
-                collection.RemoveItem(item);
-                DeployTent();
-                return true;
-            }
             else
             {
-                DaggerfallUI.MessageBox("You have already set up your tent.");
-                return false;
+                item.LowerCondition(1, GameManager.Instance.PlayerEntity, collection);
+                if (item.currentCondition > 0)
+                {
+                    CampDmg = item.maxCondition - item.currentCondition;
+                    collection.RemoveItem(item);
+                    DeployTent();
+                    return true;
+                }
+                else
+                {
+                    DaggerfallUI.MessageBox("Your camping equipment broke.");
+                    return false;
+                }
             }
         }
 
@@ -61,6 +68,10 @@ namespace ClimatesCalories
                 SetTentPositionAndRotation();
                 DaggerfallUI.MessageBox("You set up camp");
             }
+            else
+            {
+                PlaceTentOnGround();
+            }
             //Attempt to load a model replacement
             Tent = MeshReplacement.ImportCustomGameobject(tentModelID, null, TentMatrix);
             Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
@@ -69,6 +80,7 @@ namespace ClimatesCalories
                 Tent = GameObjectHelper.CreateDaggerfallMeshGameObject(tentModelID, null);
             }
             //Set the model's position in the world
+
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
             {
@@ -170,8 +182,10 @@ namespace ClimatesCalories
             }
             else
             {
+                DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
+                CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
                 DestroyCamp();
-                GameManager.Instance.PlayerEntity.Items.AddItem(DeployedTent);
+                GameManager.Instance.PlayerEntity.Items.AddItem(CampEquip);
                 CampDeployed = false;
                 FireLit = false;
                 TentMatrix = new Matrix4x4();
@@ -193,12 +207,8 @@ namespace ClimatesCalories
 
         public static void Destroy_OnTransition(PlayerEnterExit.TransitionEventArgs args)
         {
-
             DestroyCamp();
-            DeployedTent = null;
         }
-
-
 
         private static void SetTentPositionAndRotation()
         {
@@ -217,6 +227,17 @@ namespace ClimatesCalories
             else
             {
                 Debug.Log("Setting tent position and rotation failed");
+            }
+        }
+
+        private static void PlaceTentOnGround()
+        {
+            RaycastHit hit;
+            Ray ray = new Ray(TentPosition, Vector3.down);
+            if (Physics.Raycast(ray, out hit, 1000))
+            {
+                TentPosition = hit.point;
+                TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
             }
         }
 

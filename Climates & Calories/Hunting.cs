@@ -158,7 +158,7 @@ namespace ClimatesCalories
         private static void DesertHuntingCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            bool playerHasBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null && GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
             int huntingRoll = Random.Range(1, 101);
             int genRoll = Random.Range(1, 101);
@@ -473,7 +473,7 @@ namespace ClimatesCalories
         private static void BirdHuntingCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            bool playerHasBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null && GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
             int skillRoll = Random.Range(1, 90);
 
@@ -541,7 +541,7 @@ namespace ClimatesCalories
         private static void SwampHuntCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            bool playerHasBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null && GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
             int skillRoll = Random.Range(1, 110);
 
@@ -645,7 +645,7 @@ namespace ClimatesCalories
         private static void WoodsHuntCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            bool playerHasBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null && GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
             int skillRoll = Random.Range(1, 101);
 
@@ -767,7 +767,7 @@ namespace ClimatesCalories
         private static void MountainHuntCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            bool playerHasBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow) != null && GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow) != null ? false : true;
+            bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
             int skillRoll = Random.Range(1, 101);
 
