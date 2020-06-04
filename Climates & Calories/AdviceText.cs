@@ -30,9 +30,9 @@ namespace ClimatesCalories
         static private bool cloak = ClimateCalories.cloak;
         static private bool hood = ClimateCalories.hood;
         static private bool drink = ClimateCalories.gotDrink;
-        static private uint hunger = FillingFood.hunger;
-        static private bool starving = FillingFood.starving;
-        static private bool rations = FillingFood.rations;
+        static private uint hunger = Hunger.hunger;
+        static private bool starving = Hunger.starving;
+        static private bool rations = Hunger.rations;
 
         public static void AdviceDataUpdate()
         {
@@ -45,9 +45,9 @@ namespace ClimatesCalories
             cloak = ClimateCalories.cloak;
             hood = ClimateCalories.hood;
             drink = ClimateCalories.gotDrink;
-            hunger = FillingFood.hunger;
-            starving = FillingFood.starving;
-            rations = FillingFood.RationsToEat();
+            hunger = Hunger.hunger;
+            starving = Hunger.starving;
+            rations = Hunger.RationsToEat();
         }
 
         public static string TxtClimate()
@@ -483,22 +483,22 @@ namespace ClimatesCalories
 
         public static string TxtFood()
         {
-            hunger = FillingFood.hunger;
+            hunger = Hunger.hunger;
             string foodString = "If you had a decent meal, you could go on for longer.";
 
             if (starving)
             {
-                if (FillingFood.starvDays > 7)
+                if (Hunger.starvDays > 7)
                 {
                     foodString = string.Format("You have not eaten properly in over a week. You feeling very weak.");
                 }
-                else if (FillingFood.starvDays == 1)
+                else if (Hunger.starvDays == 1)
                 {
                     foodString = string.Format("You have not eaten properly in a day. You are feeling weak.");
                 }
                 else
                 {
-                    foodString = string.Format("You have not eaten properly in {0} days. You are getting weaker.", FillingFood.starvDays.ToString());
+                    foodString = string.Format("You have not eaten properly in {0} days. You are getting weaker.", Hunger.starvDays.ToString());
                 }
             }
             else if (playerGPS.IsPlayerInLocationRect && !rations)

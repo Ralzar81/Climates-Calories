@@ -84,11 +84,11 @@ namespace ClimatesCalories
             {
                 WetCount = wetCount,
                 AttCount = attCount,
-                Starvation = FillingFood.starvDays,
-                Hungry = FillingFood.hungry,
-                Starving = FillingFood.starving,
+                Starvation = Hunger.starvDays,
+                Hungry = Hunger.hungry,
+                Starving = Hunger.starving,
                 HuntingTimer = Hunting.huntingTimer,
-                RotDays = FillingFood.daysRot,
+                RotDays = Hunger.daysRot,
                 TentMapPixel = Camping.CampMapPixel,
                 TentPlaced = Camping.CampDeployed,
                 TentPosition = Camping.TentPosition,
@@ -103,11 +103,11 @@ namespace ClimatesCalories
             var climateCaloriesSaveData = (ClimateCaloriesSaveData)saveData;
             wetCount = climateCaloriesSaveData.WetCount;
             attCount = climateCaloriesSaveData.AttCount;
-            FillingFood.starvDays = climateCaloriesSaveData.Starvation;
-            FillingFood.hungry = climateCaloriesSaveData.Hungry;
-            FillingFood.starving = climateCaloriesSaveData.Starving;
+            Hunger.starvDays = climateCaloriesSaveData.Starvation;
+            Hunger.hungry = climateCaloriesSaveData.Hungry;
+            Hunger.starving = climateCaloriesSaveData.Starving;
             Hunting.huntingTimer = climateCaloriesSaveData.HuntingTimer;
-            FillingFood.daysRot = climateCaloriesSaveData.RotDays;
+            Hunger.daysRot = climateCaloriesSaveData.RotDays;
             Camping.CampMapPixel = climateCaloriesSaveData.TentMapPixel;
             Camping.CampDeployed = climateCaloriesSaveData.TentPlaced;
             Camping.TentPosition = climateCaloriesSaveData.TentPosition;
@@ -150,7 +150,7 @@ namespace ClimatesCalories
 
             StartGameBehaviour.OnStartGame += ClimatesCalories_OnStartGame;
             EntityEffectBroker.OnNewMagicRound += ClimatesCaloriesEffects_OnNewMagicRound;
-            EntityEffectBroker.OnNewMagicRound += FillingFood.FoodEffects_OnNewMagicRound;
+            EntityEffectBroker.OnNewMagicRound += Hunger.FoodEffects_OnNewMagicRound;
             //PlayerEnterExit.OnTransitionInterior += Camping.Destroy_OnTransition;
             //PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
             //PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
@@ -314,32 +314,32 @@ namespace ClimatesCalories
                 return;            
             if (fastTravelTime > 0 && !DaggerfallUI.Instance.FadeBehaviour.FadeInProgress)
             {
-                playerEntity.LastTimePlayerAteOrDrankAtTavern = FillingFood.gameMinutes - 260;
-                FillingFood.hungry = false;
-                FillingFood.starving = false;
-                FillingFood.starvDays = 0;
-                FillingFood.FoodRot(fastTravelTime);
+                playerEntity.LastTimePlayerAteOrDrankAtTavern = Hunger.gameMinutes - 260;
+                Hunger.hungry = false;
+                Hunger.starving = false;
+                Hunger.starvDays = 0;
+                Hunger.FoodRot(fastTravelTime);
                 fastTravelTime = 0;
             }
-            FillingFood.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            FillingFood.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
-            FillingFood.hunger = FillingFood.gameMinutes - FillingFood.ateTime;
-            if (FillingFood.hunger <= 240 && FillingFood.hungry)
+            Hunger.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            Hunger.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
+            Hunger.hunger = Hunger.gameMinutes - Hunger.ateTime;
+            if (Hunger.hunger <= 240 && Hunger.hungry)
             {
-                FillingFood.hungry = false;
-                FillingFood.starving = false;
-                FillingFood.starvDays = 0;
+                Hunger.hungry = false;
+                Hunger.starving = false;
+                Hunger.starvDays = 0;
                 DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
             }
-            else if (FillingFood.starvDays >= 1 && !FillingFood.starving)
+            else if (Hunger.starvDays >= 1 && !Hunger.starving)
             {
-                FillingFood.starvDays = (FillingFood.hunger / 1440);
-                FillingFood.starving = true;
+                Hunger.starvDays = (Hunger.hunger / 1440);
+                Hunger.starving = true;
                 DaggerfallUI.AddHUDText("You are starving...");
             }
-            else if (FillingFood.starvDays < 1 && FillingFood.starving)
+            else if (Hunger.starvDays < 1 && Hunger.starving)
             {
-                FillingFood.starving = false;
+                Hunger.starving = false;
             }
         }
 
@@ -392,7 +392,7 @@ namespace ClimatesCalories
             absTemp = Mathf.Abs(totalTemp);
             cloak = Cloak();
             hood = HoodUp();
-            FillingFood.rations = FillingFood.RationsToEat();
+            Hunger.rations = Hunger.RationsToEat();
 
             AdviceText.AdviceDataUpdate();
         }
@@ -462,9 +462,9 @@ namespace ClimatesCalories
                     txtCount = txtIntervals;
                     wetCount = Mathf.Max(wetCount - 2, 0);
                     attCount = Mathf.Max(attCount - 2, 0);
-                    FillingFood.FoodRotCounter();
-                    FillingFood.Starvation();
-                    debuffValue = (int)FillingFood.starvDays * 2;
+                    Hunger.FoodRotCounter();
+                    Hunger.Starvation();
+                    debuffValue = (int)Hunger.starvDays * 2;
                     DebuffAtt(debuffValue);
                 }
                 //When fast traveling counters resets.
@@ -478,8 +478,8 @@ namespace ClimatesCalories
                 //Sleeping outside. Since there is no way currently to interrupt Rest, except with monsters, I keep track of temp during sleep and apply effects when waking up.
                 else if (GameManager.IsGamePaused && !playerEnterExit.IsPlayerInsideBuilding && !Hunting.huntingTime)
                 {
-                    FillingFood.FoodRotCounter();
-                    FillingFood.Starvation();
+                    Hunger.FoodRotCounter();
+                    Hunger.Starvation();
                     txtCount = txtIntervals;
                     wetCount += wetWeather + wetEnvironment;
                     if (natTemp > 10)
@@ -519,9 +519,9 @@ namespace ClimatesCalories
 
                     Debug.Log("[Climates & Calories] NORMAL ROUND");
 
-                    FillingFood.FoodRotCounter();
-                    FillingFood.FoodRotter();
-                    FillingFood.Starvation();
+                    Hunger.FoodRotCounter();
+                    Hunger.FoodRotter();
+                    Hunger.Starvation();
                     
                     playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
                     int fatigueDmg = 0;
@@ -1946,181 +1946,5 @@ namespace ClimatesCalories
             DaggerfallUI.AddHUDText(wetString);
             if (totalTemp < -10 && !GameManager.Instance.PlayerMotor.IsSwimming) { DaggerfallUI.AddHUDText("You should make camp and dry off."); }
         }
-    }
-
-    public class FillingFood
-    {
-        DaggerfallUnity dfUnity;
-        PlayerEnterExit playerEnterExit;
-
-        //Hunting code WIP
-        static float lastTickTime;
-        static float tickTimeInterval;
-
-        //Hunting Quest test
-        static PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-        static public bool hungry = true;
-        static public bool starving = false;
-        static public uint starvDays = 0;
-        static private int starvCounter = 0;
-        static public bool rations = RationsToEat();
-        static private int foodCount = 0;
-        static public uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-        static public uint ateTime = GameManager.Instance.PlayerEntity.LastTimePlayerAteOrDrankAtTavern;
-        static public uint hunger = gameMinutes - ateTime;
-
-        private static void GiveMeat(int meatAmount)
-        {
-            for (int i = 0; i < meatAmount; i++)
-            {
-                GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex));
-            }
-        }
-
-        static public void Starvation()
-        {
-            gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            ateTime = GameManager.Instance.PlayerEntity.LastTimePlayerAteOrDrankAtTavern;
-            hunger = gameMinutes - ateTime;
-            starvDays = (hunger / 1440);
-            starvCounter += (int)starvDays;
-            rations = RationsToEat();
-            if (hunger > 240)
-            {
-                hungry = true;
-            }
-            if (starvDays >= 1)
-            {
-                starving = true;
-            }
-            else
-            {
-                starving = false;
-            }
-            if (starving)
-            {
-                if (rations && starvCounter > 24)
-                {
-                    EatRation();
-                }
-                else if (!rations && starvCounter > 5)
-                {
-                    playerEntity.DecreaseFatigue(1);
-                }
-            }
-            else if (!starving)
-            {
-                starvDays = 0;
-            }
-        }
-
-        static private void EatRation()
-        {
-            List<DaggerfallUnityItem> sacks = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
-            foreach (DaggerfallUnityItem sack in sacks)
-            {
-                if (sack.weightInKg > 0.1)
-                {
-                    sack.weightInKg -= 0.1f;
-                    playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 250;
-                    if (!GameManager.IsGamePaused)
-                    {
-                        DaggerfallUI.AddHUDText("You eat some rations.");
-                    }
-                    if (sack.weightInKg <= 0.1)
-                    {
-                        GameManager.Instance.PlayerEntity.Items.RemoveItem(sack);
-                        DaggerfallUI.MessageBox(string.Format("You empty your sack of rations." ));
-                    }
-                    break;
-                }
-            }
-        }
-
-        static public bool RationsToEat()
-        {
-            List<DaggerfallUnityItem> sacks = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
-            foreach (DaggerfallUnityItem sack in sacks)
-            {
-                if (sack.weightInKg > 0.1)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        static public void FoodRot(int rotBonus = 0)
-        {
-            bool rotted = false;
-            int rotChance = 0;
-            foreach (ItemCollection playerItems in new ItemCollection[] { GameManager.Instance.PlayerEntity.Items, GameManager.Instance.PlayerEntity.WagonItems, GameManager.Instance.PlayerEntity.OtherItems })
-            {
-                for (int i = 0; i < playerItems.Count; i++)
-                {
-                    DaggerfallUnityItem item = playerItems.GetItem(i);
-                    if (item is AbstractItemFood)
-                    {
-                        rotChance = UnityEngine.Random.Range(1, 100) + rotBonus;
-                        AbstractItemFood food = item as AbstractItemFood;
-                        if (rotChance > food.maxCondition && !food.RotFood())
-                        {
-                            food.RotFood();
-                            rotted = true;
-                        }
-                        rotChance = 0;
-                    }
-                }
-            }
-            if (rotted)
-            {
-                daysRot = 0;
-                rotted = false;
-                DaggerfallUI.AddHUDText("Your food is getting a bit ripe...");
-            }
-        }
-
-        private static int rotCounter = 0;
-        public static int daysRot = 0;
-
-        public static void FoodRotter()
-        {        
-            if (daysRot >= 1)
-            {
-                for (int i = 0; i < daysRot; i++)
-                {
-                    FoodRot();
-                }
-                daysRot = 0;
-            }
-        }
-
-        public static void FoodRotCounter()
-        {
-            rotCounter++;
-            if (rotCounter > 720)
-            {
-                rotCounter = 0;
-                daysRot++;
-            }
-        }
-
-        public static void FoodEffects_OnNewMagicRound()
-        {
-            if (hunger < 240)
-            {
-                foodCount += (240 - (int)hunger);
-                if (foodCount >= 500)
-                {
-                    playerEntity.IncreaseFatigue(1, true);
-                    foodCount = 0;
-                }
-            }
-            else if (!hungry)
-            {
-                hungry = true;
-                DaggerfallUI.AddHUDText("Your stomach rumbles...");
-            }
-        }
-    }
+    }    
 }

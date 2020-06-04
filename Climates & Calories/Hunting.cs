@@ -849,6 +849,7 @@ namespace ClimatesCalories
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex));
             }
+            DaggerfallUI.AddHUDText("You gain " + meatAmount.ToString() + " pieces of Meat.");
         }
 
         private static void GiveOranges(int fruitAmount)
@@ -857,6 +858,7 @@ namespace ClimatesCalories
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemOrange.templateIndex));
             }
+            DaggerfallUI.AddHUDText("You gain " + fruitAmount.ToString() + " Oranges.");
         }
 
         private static void GiveApples(int fruitAmount)
@@ -865,6 +867,7 @@ namespace ClimatesCalories
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemApple.templateIndex));
             }
+            DaggerfallUI.AddHUDText("You gain "+fruitAmount.ToString()+" Apples.");
         }
 
         static void RefillWater(float waterAmount)
