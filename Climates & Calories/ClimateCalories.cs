@@ -139,7 +139,7 @@ namespace ClimatesCalories
         static bool climatesCloaksOld = false;
         static bool fillingFoodOld = false;
 
-        [Invoke(StateManager.StateTypes.Start, 0)]
+        [Invoke(StateManager.StateTypes.Game, 0)]
         public static void Init(InitParams initParams)
         {
             mod = initParams.Mod;
