@@ -49,7 +49,6 @@ namespace ClimatesCalories
         public const int templateIndex_CampEquip = 530;
         public const int templateIndex_Rations = 531;
         public const int templateIndex_Waterskin = 539;
-        public static int testCounter = 0;
 
         static Mod mod;
         static ClimateCalories instance;
@@ -121,6 +120,7 @@ namespace ClimatesCalories
             {
                 Camping.DeployTent(true);
             }
+            restoreSaveRound = true;
         }
 
         public const int tentModelID = 41606;
@@ -139,6 +139,7 @@ namespace ClimatesCalories
         public static bool tediousTravel = false;
         static bool climatesCloaksOld = false;
         static bool fillingFoodOld = false;
+        static bool restoreSaveRound = false;
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -192,19 +193,6 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 197, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
-        }
-
-        private static void ClimatesCaloriesTest_OnNewMagicRound()
-        {
-            DaggerfallUI.AddHUDText("C&C round " + testCounter.ToString());
-            testCounter++;
-            if (testCounter > 100)
-                testCounter = 0;
-        }
-
-        private static void ClickFire(RaycastHit hit)
-        {
-            DaggerfallUI.AddHUDText("ClickFire");
         }
 
         private static void WaterSourceActivation(RaycastHit hit)
@@ -463,6 +451,11 @@ namespace ClimatesCalories
 
         private static void ClimatesCaloriesEffects_OnNewMagicRound()
         {
+            if (restoreSaveRound && !SaveLoadManager.Instance.LoadInProgress)
+            {
+                restoreSaveRound = false;
+                return;
+            }
             if (!SaveLoadManager.Instance.LoadInProgress)
             {
                 debuffValue = 0;
@@ -511,11 +504,12 @@ namespace ClimatesCalories
                             groundSleep = true;
                         }
                     }
+                    debuffValue = (int)Hunger.starvDays * 2;
+                    DebuffAtt(debuffValue);
                 }
                 //If not camping, bed sleeping or traveling, apply normal C&C effects.
                 else
                 {
-                    Debug.Log("[Climates & Calories] NORMAL ROUND");
                     Hunger.FoodRotCounter();
                     Hunger.FoodRotter();
                     Hunger.Starvation();
@@ -653,8 +647,7 @@ namespace ClimatesCalories
                     playerEntity.DecreaseFatigue(fatigueDmg, true);
                     playerEntity.DecreaseMagicka(fatigueDmg);
 
-                    //int starvDays = (int)FillingFood.starvDays;
-                    //debuffValue = starvDays * 2;
+                    debuffValue = (int)Hunger.starvDays * 2;
 
                     if (attCount > 0)
                     {

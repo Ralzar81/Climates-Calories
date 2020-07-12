@@ -8,6 +8,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace ClimatesCalories
 {

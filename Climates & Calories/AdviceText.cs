@@ -501,7 +501,7 @@ namespace ClimatesCalories
                     foodString = string.Format("You have not eaten properly in {0} days. You are getting weaker.", Hunger.starvDays.ToString());
                 }
             }
-            else if (playerGPS.IsPlayerInLocationRect && !rations)
+            else if (playerGPS.IsPlayerInLocationRect && playerGPS.IsPlayerInTown() && !rations)
             {
                 foodString = "You might want to buy some rations while in town.";
             }
