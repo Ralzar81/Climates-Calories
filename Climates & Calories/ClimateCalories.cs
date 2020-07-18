@@ -292,7 +292,6 @@ namespace ClimatesCalories
         static private int sleepTemp = 0;
         static private bool playerIsWading = false;
 
-        static private float tickTimeHunting = 0;
         const float stdInterval = 0.5f;
         static private bool lookingUp = false;
         bool statusClosed = true;
