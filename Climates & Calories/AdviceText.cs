@@ -8,9 +8,11 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.MagicAndEffects;
 using UnityEngine;
+using System.Collections.Generic;
 using DaggerfallWorkshop;
 using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Utility;
+using DaggerfallWorkshop.Game.UserInterfaceWindows;
 
 namespace ClimatesCalories
 {
@@ -22,32 +24,75 @@ namespace ClimatesCalories
         static RaceTemplate playerRace = playerEntity.RaceTemplate;
 
         static private int wetCount = ClimateCalories.wetCount;
-        static private int baseNatTemp = ClimateCalories.baseNatTemp;
-        static private int natTemp = ClimateCalories.natTemp;
-        static private int armorTemp = ClimateCalories.armorTemp;
-        static private int pureClothTemp = ClimateCalories.pureClothTemp;
-        static private int totalTemp = ClimateCalories.totalTemp;
-        static private bool cloak = ClimateCalories.cloak;
-        static private bool hood = ClimateCalories.hood;
-        static private bool drink = ClimateCalories.gotDrink;
+        static private int baseNatTemp = Climates.baseNatTemp;
+        static private int natTemp = Climates.natTemp;
+        static private int armorTemp = Climates.armorTemp;
+        static private int pureClothTemp = Climates.pureClothTemp;
+        static private int totalTemp = Climates.totalTemp;
+        static private bool cloak = Climates.cloak;
+        static private bool hood = Climates.hood;
+        static private bool drink = Climates.gotDrink;
         static private uint hunger = Hunger.hunger;
         static private bool starving = Hunger.starving;
         static private bool rations = Hunger.rations;
+        static private int sleepyCounter = Sleep.sleepyCounter;
+        static private int awakeOrAsleepHours = (int)Sleep.awakeOrAsleepHours;
+
+        static public bool statusClosed = true;
+
+
+        public static void AdviceBuilder(bool encumbranceRPR)
+        {
+            DaggerfallMessageBox msgBox = DaggerfallUI.UIManager.TopWindow as DaggerfallMessageBox;
+            if (msgBox != null && msgBox.ExtraProceedBinding == InputManager.Instance.GetBinding(InputManager.Actions.Status))
+            {
+                // Setup next status info box.
+                DaggerfallMessageBox newBox = new DaggerfallMessageBox(DaggerfallUI.UIManager, msgBox);
+                List<string> messages = new List<string>();
+                messages.Add(TxtClimate());
+                if (!string.IsNullOrEmpty(TxtAdvice()))
+                {
+                    messages.Add(TxtAdvice());
+                }
+                messages.Add(string.Empty);
+                if (encumbranceRPR)
+                {
+                    messages.Add(TxtEncumbrance());
+                    if (!string.IsNullOrEmpty(TxtEncAdvice()))
+                    {
+                        messages.Add(TxtEncAdvice());
+                    }
+                    messages.Add(string.Empty);
+                }
+                messages.Add(TxtFood());
+                messages.Add(string.Empty);
+                messages.Add(TxtSleep());
+
+                newBox.SetText(messages.ToArray());
+
+                newBox.ExtraProceedBinding = InputManager.Instance.GetBinding(InputManager.Actions.Status); // set proceed binding
+                newBox.ClickAnywhereToClose = true;
+                msgBox.AddNextMessageBox(newBox);
+                statusClosed = false;
+            }
+        }
 
         public static void AdviceDataUpdate()
         {
             wetCount = ClimateCalories.wetCount;
-            baseNatTemp = ClimateCalories.baseNatTemp;
-            natTemp = ClimateCalories.natTemp;
-            armorTemp = ClimateCalories.armorTemp;
-            pureClothTemp = ClimateCalories.pureClothTemp;
-            totalTemp = ClimateCalories.totalTemp;
-            cloak = ClimateCalories.cloak;
-            hood = ClimateCalories.hood;
-            drink = ClimateCalories.gotDrink;
+            baseNatTemp = Climates.baseNatTemp;
+            natTemp = Climates.natTemp;
+            armorTemp = Climates.armorTemp;
+            pureClothTemp = Climates.pureClothTemp;
+            totalTemp = Climates.totalTemp;
+            cloak = Climates.cloak;
+            hood = Climates.hood;
+            drink = Climates.gotDrink;
             hunger = Hunger.hunger;
             starving = Hunger.starving;
             rations = Hunger.RationsToEat();
+            sleepyCounter = Sleep.sleepyCounter;
+            awakeOrAsleepHours = (int)Sleep.awakeOrAsleepHours;
         }
 
         public static string TxtClimate()
@@ -238,7 +283,7 @@ namespace ClimatesCalories
             }
             else
             {
-                return "This " + temperatureTxt.ToString() + weatherTxt.ToString() + seasonTxt.ToString() + timeTxt.ToString() + climateTxt.ToString() + suitabilityTxt.ToString();
+                return "It is a " + temperatureTxt.ToString() + weatherTxt.ToString() + seasonTxt.ToString() + timeTxt.ToString() + climateTxt.ToString() + ".";
             }
         }
 
@@ -354,7 +399,7 @@ namespace ClimatesCalories
             DaggerfallUnityItem cloak1 = playerEntity.ItemEquipTable.GetItem(EquipSlots.Cloak1);
             DaggerfallUnityItem cloak2 = playerEntity.ItemEquipTable.GetItem(EquipSlots.Cloak2);
 
-            string adviceTxt = "You do not feel the need to make any adjustments.";
+            string adviceTxt = "";
 
             if (totalTemp < -10)
             {
@@ -370,16 +415,16 @@ namespace ClimatesCalories
                 {
                     if (isDungeon)
                     {
-                        adviceTxt = "You should find a fire to help you get dry.";
+                        adviceTxt = "Find a fire or make camp to help you get dry.";
                     }
                     else
                     {
-                        adviceTxt = "Walking around cold and wet might be hazardous to your health.";
+                        adviceTxt = "Find a tavern or make camp to get dry.";
                     }
                 }
                 else if (pureClothTemp < 30)
                 {
-                    adviceTxt = "In weather like this, it is important to dress warm enough.";
+                    adviceTxt = "It is important to dress warm enough.";
 
                     if (cloak1 != null)
                     {
@@ -387,12 +432,12 @@ namespace ClimatesCalories
                         {
                             case (int)MensClothing.Casual_cloak:
                             case (int)WomensClothing.Casual_cloak:
-                                adviceTxt = "Your casual cloak offers little protection from this cold.";
+                                adviceTxt = "Your casual cloak offers little warmth.";
                                 break;
                         }
                         if (cloak2 == null)
                         {
-                            adviceTxt = "In this cold, you should wear thicker clothes or a second cloak.";
+                            adviceTxt = "You should wear thicker clothes or a second cloak.";
                         }
                     }
                     if (cloak2 != null)
@@ -401,18 +446,18 @@ namespace ClimatesCalories
                         {
                             case (int)MensClothing.Casual_cloak:
                             case (int)WomensClothing.Casual_cloak:
-                                adviceTxt = "Your casual cloak offers little protection from this cold.";
+                                adviceTxt = "Your casual cloak offers little warmth.";
                                 break;
                         }
                         if (cloak1 == null)
                         {
-                            adviceTxt = "In this cold, you should wear thicker clothes or a second cloak.";
+                            adviceTxt = "You should wear thicker clothes or a second cloak.";
                         }
                     }
                 }
                 else if (armorTemp < 0)
                 {
-                    adviceTxt = "The metal of your armor leeches the warmth from your body.";
+                    adviceTxt = "The metal of your armor has gone icy cold.";
                 }
                 else if (isNight && !isDungeon)
                 {
@@ -420,46 +465,46 @@ namespace ClimatesCalories
                 }
                 else if (isDesert && isNight && !isDungeon)
                 {
-                    adviceTxt = "The desert nights are cold, but might be preferable to the heat of the day.";
+                    adviceTxt = "The desert nights might be preferable to this heat.";
                 }
             }
             else if (totalTemp > 10)
             {
-                if (armorTemp > 11 && playerEnterExit.IsPlayerInSunlight && !ClimateCalories.ArmorCovered())
+                if (armorTemp > 11 && playerEnterExit.IsPlayerInSunlight && !Climates.ArmorCovered())
                 {
-                    adviceTxt = "The sun is heating up your armor, perhaps you should cover it.";
+                    adviceTxt = "The sun is heating up your uncovered armor.";
                 }
                 else if (!cloak && baseNatTemp > 30 && playerEnterExit.IsPlayerInSunlight)
                 {
-                    adviceTxt = "The people of the deserts know to dress lightly and cover up in a casual cloak.";
+                    adviceTxt = "The people of the deserts dress lightly and cover up.";
                 }
                 else if (cloak && !hood && baseNatTemp > 30 && playerEnterExit.IsPlayerInSunlight)
                 {
-                    adviceTxt = "The hood of your cloak will protect your head from cooking.";
+                    adviceTxt = "The hood of your cloak will protect your head.";
                 }
                 else if (pureClothTemp > 8 && baseNatTemp > 10)
                 {
-                    adviceTxt = "On a hot day like this, it is best to dress as lightly as possible.";
+                    adviceTxt = "It is best to dress as lightly as possible.";
                 }
                 else if (pureClothTemp > 10)
                 {
-                    adviceTxt = "You might be more comfortable if you dressed lighter.";
+                    adviceTxt = "You should dress lighter.";
                 }
                 else if (isMountain && !isNight && !isDungeon)
                 {
-                    adviceTxt = "Though it is slightly warm now, you know the mountains will be icy cold once night falls.";
+                    adviceTxt = "These mountains will be icy cold once night falls.";
                 }
                 else if (totalTemp > 10 && !drink)
                 {
-                    adviceTxt = "If you brought a waterskin you might be able to keep cool.";
+                    adviceTxt = "You wish you had a water skin to drink from.";
                 }
-                else if (totalTemp > 30 && ClimateCalories.wetPen && playerGPS.IsPlayerInLocationRect)
+                else if (totalTemp > 30 && playerGPS.IsPlayerInLocationRect)
                 {
                     adviceTxt = "Perhaps there is a pool of water here you could cool off in.";
                 }
                 else if (isDesert && !isNight)
                 {
-                    adviceTxt = "Though monsters may roam the deserts at night, it might be preferable to this heat.";
+                    adviceTxt = "Though monsters roam the night, it might be preferable.";
                 }
             }
 
@@ -490,31 +535,43 @@ namespace ClimatesCalories
             {
                 if (Hunger.starvDays > 7)
                 {
-                    foodString = string.Format("You have not eaten properly in over a week. You feeling very weak.");
+                    foodString = string.Format("You have not eaten properly in over a week.");
                 }
                 else if (Hunger.starvDays == 1)
                 {
-                    foodString = string.Format("You have not eaten properly in a day. You are feeling weak.");
+                    foodString = string.Format("You have not eaten properly in a day.");
                 }
                 else
                 {
-                    foodString = string.Format("You have not eaten properly in {0} days. You are getting weaker.", Hunger.starvDays.ToString());
+                    foodString = string.Format("You have not eaten properly in {0} days.", Hunger.starvDays.ToString());
                 }
             }
             else if (playerGPS.IsPlayerInLocationRect && playerGPS.IsPlayerInTown() && !rations)
             {
-                foodString = "You might want to buy some rations while in town.";
+                foodString = "You should buy some sacks of rations while in town.";
             }
             else if (hunger < 180)
             {
-                foodString = "You are still feeling invigorated from your last meal.";
+                foodString = "You are invigorated from your last meal.";
             }
-            else if (hunger < 240)
+            else if (hunger < 220)
             {
-                foodString = "You might get hungry again soon.";
+                foodString = "You are not hungry.";
             }
             
             return foodString;
+        }
+
+        public static string TxtSleep()
+        {
+            if (sleepyCounter > 200)
+                return "You are exhausted from lack of sleep.";
+            else if (sleepyCounter > 100)
+                return "You are drowsy from lack of sleep.";
+            else if (sleepyCounter > 0)
+                return "You are tired from lack of sleep.";
+
+            return "You are well rested.";
         }
 
         public static string TxtEncumbrance()
@@ -523,7 +580,7 @@ namespace ClimatesCalories
             float encOver = Mathf.Max(encPc - 0.75f, 0f) * 2f;
             if (encOver > 0)
             {
-                return "You are overburdened, which slows and exhausts you.";
+                return "Your burden slows and exhausts you.";
             }
             else if (encPc > 0.6)
             {
@@ -549,7 +606,7 @@ namespace ClimatesCalories
             {
                 return "Perhaps you should leave some items behind?";
             }
-            return "You are still able to carry more.";
+            return "";
         }
 
     }

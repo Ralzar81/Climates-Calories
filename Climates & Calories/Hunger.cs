@@ -9,6 +9,7 @@ using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop;
 using System.Collections.Generic;
 using UnityEngine;
+using DaggerfallWorkshop.Game.Utility.ModSupport;
 
 namespace ClimatesCalories
 {
@@ -184,6 +185,7 @@ namespace ClimatesCalories
             {
                 hungry = true;
                 DaggerfallUI.AddHUDText("Your stomach rumbles...");
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
             }
         }
     }
