@@ -44,6 +44,10 @@ namespace ClimatesCalories
 
         static private void NotResting()
         {
+            Debug.Log("[Climates & Calories] NotResting() Start sleepyCounter = " + sleepyCounter.ToString());
+            Debug.Log("[Climates & Calories] NotResting() Start sleepy = " + sleepy.ToString());
+            Debug.Log("[Climates & Calories] NotResting() Start exhausted = " + exhausted.ToString());
+            Debug.Log("[Climates & Calories] NotResting() Start awakeOrAsleepHours = " + awakeOrAsleepHours.ToString());
             if (!awake)
             {
                 awake = true;
@@ -81,10 +85,16 @@ namespace ClimatesCalories
                 sleepy = false;
                 exhausted = false;
             }
+            Debug.Log("[Climates & Calories] NotResting() End sleepyCounter = " + sleepyCounter.ToString());
+            Debug.Log("[Climates & Calories] NotResting() End sleepy = " + sleepy.ToString());
+            Debug.Log("[Climates & Calories] NotResting() End exhausted = " + exhausted.ToString());
         }
 
         static private void Sleeping(int sleepTemp = 0)
         {
+            Debug.Log("[Climates & Calories] Sleeping() Start sleepyCounter = " + sleepyCounter.ToString());
+            Debug.Log("[Climates & Calories] Sleeping() Start sleepy = " + sleepy.ToString());
+            Debug.Log("[Climates & Calories] Sleeping() Start exhausted = " + exhausted.ToString());
             if (awake)
             {
                 awake = false;

@@ -140,6 +140,7 @@ namespace ClimatesCalories
             if(firstModUse)
             {
                 playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
+                Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             }
         }
 
@@ -327,6 +328,7 @@ namespace ClimatesCalories
                 Hunger.starving = false;
                 Hunger.starvDays = 0;
                 Hunger.FoodRot(fastTravelTime);
+                Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
                 fastTravelTime = 0;
             }
             Hunger.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
@@ -390,8 +392,7 @@ namespace ClimatesCalories
             GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531));
             Hunger.hungry = false;
             playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
-
-            
+            Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
         }
 
         public static bool TooExtremeToRest()

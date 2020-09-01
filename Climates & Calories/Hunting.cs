@@ -15,6 +15,7 @@ using DaggerfallConnect;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.UserInterface;
 using System.Collections.Generic;
+using DaggerfallWorkshop.Game.Utility.ModSupport;
 
 namespace ClimatesCalories
 {
@@ -29,6 +30,7 @@ namespace ClimatesCalories
         static bool vUnLucky = false;
         public static bool huntingTime = false;
         public static bool hunting = false;
+        static bool isWinter = false;
 
 
         private static bool PlayerHasBow()
@@ -50,8 +52,15 @@ namespace ClimatesCalories
                 !GameManager.Instance.PlayerEnterExit.IsPlayerInside &&
                 huntingTimer <= 0)
             {
+                isWinter = DaggerfallUnity.Instance.WorldTime.Now.SeasonValue == DaggerfallDateTime.Seasons.Winter;
                 luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
-                int roll = Random.Range(1, 200) - luckMod;
+                int roll;
+                if (isWinter)
+                {
+                    roll = Random.Range(1, 300) - luckMod;
+                }
+                else
+                    roll = Random.Range(1, 200) - luckMod;
 
                 if (roll < 2)
                 {
@@ -111,7 +120,7 @@ namespace ClimatesCalories
         {
             int roll = Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            if (roll > 7 && ClimateCalories.gotDrink)
+            if (roll > 7 && Climates.gotDrink)
             {
                 string[] message = {
                             "You spot a cluster of greener vegetation off in the distance.",
@@ -175,6 +184,8 @@ namespace ClimatesCalories
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
                         GiveMeat(1);
+                        playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                        playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                     }
                     else
                     {
@@ -192,6 +203,8 @@ namespace ClimatesCalories
                         string[] messages = new string[] { "While searching the rocks, you come upon a sleeping snake.", "Your hand shoots out, grabbing the snakes tail.", "You whip it around and smack it into a rock.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
                         GiveMeat(1);
+                        playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
+                        playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     }
                     else
                     {
@@ -218,6 +231,7 @@ namespace ClimatesCalories
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "You poke the snake to make sure it is dead before picking it up.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
                         GiveMeat(1);
+                        playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     }
                     else if (huntingRoll < skillSum)
                     {
@@ -225,6 +239,7 @@ namespace ClimatesCalories
                         ClimateCalories.TextPopup(messages);
                         DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
                         GiveMeat(1);
+                        playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     }
                     else
                     {
@@ -266,7 +281,7 @@ namespace ClimatesCalories
         {
             int roll = Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            if (roll > 7 && ClimateCalories.gotDrink)
+            if (roll > 7 && Climates.gotDrink)
             {
                 string[] message = {
                             "You spot a cluster of greener vegetation off in the distance.",
@@ -333,6 +348,7 @@ namespace ClimatesCalories
                         ClimateCalories.TextPopup(messages);
                         int fruit = Random.Range(1, 5);
                         GiveOranges(fruit);
+                        playerEntity.TallySkill(DFCareer.Skills.Climbing, 1);
                     }
                     else
                     {
@@ -406,6 +422,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "After some searching you find a small pool of water.", "You smell the water and decide it is unsafe to drink." };
                         ClimateCalories.TextPopup(messages);
+                        playerEntity.TallySkill(DFCareer.Skills.Medical, 1);
                     }
                     else
                     {
@@ -494,12 +511,16 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", "but you manage to loose several more arrows before they are out of range.", "", "You pick up the " + meat.ToString() + " dead birds and spend some time preparing them." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else if (skillRoll < skillSum)
                 {
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", " and your next shot goes wide of your prey. They are soon out of range.", "", "You collect the dead bird and spend some time preparing it." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(1);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else
                 {
@@ -516,6 +537,8 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, preparing to strike.", "You leap forward, attempting to reach your mark before it takes off.", "Your strike connect with a satisfying sound, the rest of the flock quickly flies away.", "", "You collect the dead bird and spend some time preparing it." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(1);
+                    playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else
                 {
@@ -562,6 +585,8 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "Another ripple in the water appear and you release an arrow.", "", "You pull your scaly prey out of the swamp and butcher it." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else if (skillRoll > skillSum)
                 {
@@ -579,6 +604,8 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "Your strike connect with a satisfying sound, and leverage the struggling lizard out of the water.", "", "You spend some time butchering the animal." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else
                 {
@@ -607,8 +634,14 @@ namespace ClimatesCalories
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7)
             {
+                string birds = "You spot a flock of birds settling down in the tall grass.";
+                if (isWinter)
+                {
+                    birds = "You spot a flock of birds settling down in some snow-covered bushes.";
+                }
+
                 string[] message = {
-                            "You spot a flock of birds settling down in the tall grass.",
+                            birds,
                             " ",
                             "Do you wish to spend some time attempting to hunt them?"
                         };
@@ -618,7 +651,7 @@ namespace ClimatesCalories
             else
             {
                 string[] message = {
-                            "You cross a set of animal tracks. They seem fresh.",
+                            "You spot a set of animal tracks. They seem fresh.",
                             "",
                             "Do you wish to spend some time on a hunt?"
                         };
@@ -668,12 +701,16 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You track a set of deer prints for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The deer takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else if (skillRoll < skillSum)
                 {
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and stay perfectly still.", "", "After some time, you get a clear shot and your arrow pierces the animal." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(1);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 //Fail
                 else if (skillRoll >= skillSum)
@@ -701,6 +738,8 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 //Fail
                 else
@@ -712,7 +751,7 @@ namespace ClimatesCalories
                     }
                     else
                     {
-                        string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "Suddenly the grass splits open as a wild boar charges at you!", "", "After a furious struggle you manage to chase it off." };
+                        string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "Suddenly, a wild boar charges at you!", "", "After a furious struggle you manage to chase it off." };
                         ClimateCalories.TextPopup(messages);
                         playerEntity.DecreaseHealth(10);
                     }
@@ -790,12 +829,16 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You follow the trail of a mountain goat for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The goat takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 else if (skillRoll < skillSum)
                 {
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and stay perfectly still.", "", "After some time, you get a clear shot and your arrow pierces the animal." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(1);
+                    playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 //Fail
                 else if (skillRoll >= skillSum)
@@ -823,6 +866,8 @@ namespace ClimatesCalories
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
+                    playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
+                    playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
                 //Fail
                 else
@@ -889,6 +934,7 @@ namespace ClimatesCalories
             huntingTime = true;
             int skipAmount = Mathf.Max(Random.Range(20, 120) - (GameManager.Instance.PlayerEntity.Stats.LiveSpeed / 10), 5);
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
+            GameManager.Instance.PlayerEntity.DecreaseFatigue(skipAmount, true);
             huntingTime = false;
         }
 
@@ -992,7 +1038,7 @@ namespace ClimatesCalories
             }
 
             //GameObjectHelper.CreateFoeSpawner(true, beast, count, 8, 20);
-
+            ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
             int range = Random.Range(2,8);
             GameObject[] mobiles = GameObjectHelper.CreateFoeGameObjects(player.transform.position, beast, count);
             mobiles[0].transform.position = player.transform.position - player.transform.forward * range;

@@ -592,13 +592,13 @@ namespace ClimatesCalories
         public static string TxtEncAdvice()
         {
             int goldWeight = playerEntity.GoldPieces / 400;
-            int halfMaxEnc = playerEntity.MaxEncumbrance / 2;
+            int thirdMaxEnc = playerEntity.MaxEncumbrance / 3;
             float encPc = playerEntity.CarriedWeight / playerEntity.MaxEncumbrance;
             if (playerEntity.Stats.LiveStrength < playerEntity.Stats.PermanentStrength)
             {
                 return "Your strength is reduced, making you unable to carry as much.";
             }
-            else if (goldWeight > halfMaxEnc)
+            else if (goldWeight > thirdMaxEnc)
             {
                 return "You are carrying " + goldWeight.ToString() + " kg in gold pieces.";
             }

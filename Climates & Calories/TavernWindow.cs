@@ -344,20 +344,52 @@ namespace ClimatesCalories
             DaggerfallListPickerWindow foodAndDrinkPicker = new DaggerfallListPickerWindow(uiManager, this);
             foodAndDrinkPicker.OnItemPicked += Food_OnItemPicked;
 
+            string menu = regionMenu();
             string[] tavernMenu;
-            if (tavernQuality < 11)
+            if (tavernQuality < 5)
             {
-                if (IsSouth())
-                    tavernMenu = southTavernFood1;
+                if (menu == "s")
+                    tavernMenu = sLow;
+                else if (menu == "se")
+                    tavernMenu = seLow;
+                else if (menu == "ne")
+                    tavernMenu = neLow;
+                else if (menu == "b")
+                    tavernMenu = neLow;
+                else if (menu == "o")
+                    tavernMenu = neLow;
                 else
-                    tavernMenu = northTavernFood1;
+                    tavernMenu = nLow;
+            }
+            else if (tavernQuality < 13)
+            {
+                if (menu == "s")
+                    tavernMenu = sMid;
+                else if (menu == "se")
+                    tavernMenu = seMid;
+                else if (menu == "ne")
+                    tavernMenu = neMid;
+                else if (menu == "b")
+                    tavernMenu = neMid;
+                else if (menu == "o")
+                    tavernMenu = woMid;
+                else
+                    tavernMenu = nMid;
             }
             else
             {
-                if (IsSouth())
-                    tavernMenu = southTavernFood2;
+                if (menu == "s")
+                    tavernMenu = sHigh;
+                else if (menu == "se")
+                    tavernMenu = seHigh;
+                else if (menu == "ne")
+                    tavernMenu = neHigh;
+                else if (menu == "b")
+                    tavernMenu = balHigh;
+                else if (menu == "o")
+                    tavernMenu = neHigh;
                 else
-                    tavernMenu = northTavernFood2;
+                    tavernMenu = nHigh;
             }
 
             foreach (string menuItem in tavernMenu)
@@ -372,25 +404,59 @@ namespace ClimatesCalories
 
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
             CloseWindow();
+            string menu = regionMenu();
             int price;
-            if (tavernQuality < 11)
+
+            if (tavernQuality < 5)
             {
-                if (IsSouth())
-                    price = southFoodPrices1[index];
+                if (menu == "s")
+                    price = sLowPrices[index];
+                else if (menu == "se")
+                    price = seLowPrices[index];
+                else if (menu == "ne")
+                    price = neLowPrices[index];
+                else if (menu == "b")
+                    price = neLowPrices[index];
+                else if (menu == "o")
+                    price = neLowPrices[index];
                 else
-                    price = northFoodPrices1[index];
+                    price = nLowPrices[index];
+            }
+            else if (tavernQuality < 13)
+            {
+                if (menu == "s")
+                    price = sMidPrices[index];
+                else if (menu == "se")
+                    price = seMidPrices[index];
+                else if (menu == "ne")
+                    price = neMidPrices[index];
+                else if (menu == "b")
+                    price = neMidPrices[index];
+                else if (menu == "o")
+                    price = woMidPrices[index];
+                else
+                    price = nMidPrices[index];
             }
             else
             {
-                if (IsSouth())
-                    price = southFoodPrices2[index];
+                if (menu == "s")
+                    price = sHighPrices[index];
+                else if (menu == "se")
+                    price = seHighPrices[index];
+                else if (menu == "ne")
+                    price = neHighPrices[index];
+                else if (menu == "b")
+                    price = balHighPrices[index];
+                else if (menu == "o")
+                    price = neHighPrices[index];
                 else
-                    price = northFoodPrices2[index];
+                    price = nHighPrices[index];
             }
-            uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            uint calories = (uint)price * 10;
 
-            int holidayID = FormulaHelper.GetHolidayId(gameMinutes, 0);
+
+            uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            uint cal;
+            cal = (uint)Mathf.Min(calories[index] * 10, 240);
 
             if (playerEntity.GetGoldAmount() < price)
             {
@@ -399,7 +465,7 @@ namespace ClimatesCalories
             else
             {
                 playerEntity.DeductGoldAmount(price);
-                TavernFood(calories);
+                TavernFood(cal);
             }
         }
 
@@ -427,44 +493,128 @@ namespace ClimatesCalories
             }
         }
 
+        byte[] calories = { 80, 120, 150, 200, 240 };
 
-        static readonly string[] northTavernFood1 =  {
-            "10 gold          Cabbage Stew",
-            "12 gold          Salted Herring",
-            "13 gold          Pork Pie",
-            "20 gold          Roasted Bass"
+
+        static readonly string[] nLow =  {
+            " 8 gold          Baked Apples",
+            "10 gold          Mystery Sausage",
+            "13 gold          Grilled Hare"
         };
-        byte[] northFoodPrices1 = { 10, 12, 13, 20 };
+        byte[] nLowPrices = { 8, 10, 13 };
 
-        static readonly string[] northTavernFood2 =  {
-            "11 gold          Dried Flounder",
-            "15 gold          Pork Sausages",
-            "16 gold          Roasted Fowl",
-            "24 gold          Mutton Stew"
+        static readonly string[] nMid =  {
+            "10 gold          Breton Pork Sausage",
+            "12 gold          Cheese Pork Schnitzel",
+            "15 gold          Hare in Garlic Sauce",
+            "20 gold          Highland Rabbit Stew"
         };
-        byte[] northFoodPrices2 = { 11, 15, 16, 24 };
+        byte[] nMidPrices = { 10, 12, 15, 20 };
 
-        static readonly string[] southTavernFood1 =  {
-            "10 gold          Bean Stew",
-            "12 gold          Oiled Sardines",
-            "13 gold          Chicken Stew",
-            "20 gold          Roasted Goat"
+        static readonly string[] nHigh =  {
+            "12 gold          Gorapple Cheesecake",
+            "18 gold          Apple Cobbler Supreme",
+            "20 gold          Peacock Pie",
+            "25 gold          Rabbit Gnocchi Ragu",
+            "30 gold          Salmon Steak Supreme"
         };
-        byte[] southFoodPrices1 = { 10, 12, 13, 20 };
+        byte[] nHighPrices = { 12, 18, 20, 25, 30 };
 
-        static readonly string[] southTavernFood2 =  {
-            "11 gold          Bean Stew",
-            "15 gold          Goat Rolls",
-            "16 gold          Curry",
-            "24 gold          Mutton Stew"
+
+
+        static readonly string[] neLow =  {
+            " 8 gold          Velothis Cabbage Soup",
+            "10 gold          Beetle-Cheese Poutine",
+            "13 gold          Eidar Radish Salad"
         };
-        byte[] southFoodPrices2 = { 11, 15, 16, 24 };
+        byte[] neLowPrices = { 8, 10, 13 };
+
+        static readonly string[] neMid =  {
+            "10 gold          Cabbage Biscuits",
+            "12 gold          Potato Porridge",
+            "15 gold          Dunmeri Jerked Horse Haunch",
+            "20 gold          Solstheim Elk and Scuttle"
+        };
+        byte[] neMidPrices = { 10, 12, 15, 20 };
+
+        static readonly string[] neHigh =  {
+            "12 gold          Indoril Radish Tartlets",
+            "18 gold          Vvardenfell Ash Yam Loaf",
+            "20 gold          Kwama Egg Quiche",
+            "25 gold          Millet-Stuffed Pork Loin",
+            "30 gold          Akaviri Pork Fried Rice"
+        };
+        byte[] neHighPrices = { 12, 18, 20, 25, 30 };
+
+
+        static readonly string[] sLow =  {
+            " 8 gold          Cantaloupe Bread",
+            "10 gold          Fishy Stick",
+            "13 gold          Roasted Corn"
+        };
+        byte[] sLowPrices = { 8, 10, 13 };
+
+        static readonly string[] sMid =  {
+            "10 gold          Beets With Goat Cheese",
+            "12 gold          Venison Pie",
+            "15 gold          Antelope Stew",
+            "20 gold          Parmesan Eels in Watermelon"
+        };
+        byte[] sMidPrices = { 10, 12, 15, 20 };
+
+        static readonly string[] sHigh =  {
+            "12 gold          Roast Anteloupe",
+            "18 gold          Melon-Chevre Salad",
+            "20 gold          Pork Fried Rice",
+            "25 gold          Chili Cheese Corn",
+            "30 gold          Supreme Jambalaya"
+        };
+        byte[] sHighPrices = { 12, 18, 20, 25, 30 };
 
 
 
+        static readonly string[] seLow =  {
+            " 8 gold          Banana Surprise",
+            "10 gold          Green Bananas With Garlic",
+            "13 gold          Banana Cornbread"
+        };
+        byte[] seLowPrices = { 8, 10, 13 };
+
+        static readonly string[] seMid =  {
+            "10 gold          Banana Millet Muffin",
+            "12 gold          Baked Sole With Bananas",
+            "15 gold          Chicken-and-Coconut Fried Rice",
+            "20 gold          Mistral Banana-Bunny Hash"
+        };
+        byte[] seMidPrices = { 10, 12, 15, 20 };
+
+        static readonly string[] seHigh =  {
+            "12 gold          Clan Mother's Banana Pilaf",
+            "18 gold          Stuffed Banana Leaves",
+            "20 gold          Jungle Snake Curry",
+            "25 gold          Banana-Radish Vichyssoise",
+            "30 gold          Spicy Grilled Lizard"
+        };
+        byte[] seHighPrices = { 12, 18, 20, 25, 30 };
 
 
+        static readonly string[] balHigh =  {
+            "12 gold          Summerset Rainbow Pie",
+            "18 gold          Old Aldmeri Gruel",
+            "20 gold          Pickled Fish Bowl",
+            "25 gold          Direnni Rabbit Bisque",
+            "30 gold          Lillandril Summer Sausage"
+        };
+        byte[] balHighPrices = { 12, 18, 20, 25, 30 };
 
+
+        static readonly string[] woMid =  {
+            "10 gold          Potato Porridge",
+            "12 gold          Orcish Bratwurst On Bun",
+            "15 gold          Jerall Carrot Cake",
+            "20 gold          Bruma Jugged Rabbit"
+        };
+        byte[] woMidPrices = { 10, 12, 15, 20 };
 
 
 
@@ -489,20 +639,52 @@ namespace ClimatesCalories
                 DaggerfallListPickerWindow foodAndDrinkPicker = new DaggerfallListPickerWindow(uiManager, this);
                 foodAndDrinkPicker.OnItemPicked += Drinks_OnItemPicked;
 
+                string menu = regionMenu();
                 string[] tavernMenu;
-                if (tavernQuality < 11)
+                if (tavernQuality < 5)
                 {
-                    if (IsSouth())
-                        tavernMenu = southTavernDrinks1;
+                    if (menu == "s")
+                        tavernMenu = sLowDrinks;
+                    else if (menu == "se")
+                        tavernMenu = sLowDrinks;
+                    else if (menu == "ne")
+                        tavernMenu = neLowDrinks;
+                    else if (menu == "b")
+                        tavernMenu = neLowDrinks;
+                    else if (menu == "o")
+                        tavernMenu = woLowDrinks;
                     else
-                        tavernMenu = northTavernDrinks1;
+                        tavernMenu = nLowDrinks;
+                }
+                else if (tavernQuality < 13)
+                {
+                    if (menu == "s")
+                        tavernMenu = sMidDrinks;
+                    else if (menu == "se")
+                        tavernMenu = sMidDrinks;
+                    else if (menu == "ne")
+                        tavernMenu = neMidDrinks;
+                    else if (menu == "b")
+                        tavernMenu = neMidDrinks;
+                    else if (menu == "o")
+                        tavernMenu = woMidDrinks;
+                    else
+                        tavernMenu = nMidDrinks;
                 }
                 else
                 {
-                    if (IsSouth())
-                        tavernMenu = southTavernDrinks2;
+                    if (menu == "s")
+                        tavernMenu = sHighDrinks;
+                    else if (menu == "se")
+                        tavernMenu = sHighDrinks;
+                    else if (menu == "ne")
+                        tavernMenu = neHighDrinks;
+                    else if (menu == "b")
+                        tavernMenu = neHighDrinks;
+                    else if (menu == "o")
+                        tavernMenu = neHighDrinks;
                     else
-                        tavernMenu = northTavernDrinks2;
+                        tavernMenu = nHighDrinks;
                 }
 
                 foreach (string menuItem in tavernMenu)
@@ -514,27 +696,25 @@ namespace ClimatesCalories
 
         protected void Drinks_OnItemPicked(int index, string foodOrDrinkName)
         {
-            int tavernQuality = playerEnterExit.Interior.BuildingData.Quality;
-
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
             CloseWindow();
-            int price;
-            if (tavernQuality < 11)
+            int price = drinkPrices[index];
+            int tavernQuality = playerEnterExit.Interior.BuildingData.Quality;
+            uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            int alcohol;
+
+            if (tavernQuality < 5)
             {
-                if (IsSouth())
-                    price = southDrinksPrices1[index];
-                else
-                    price = northDrinksPrices1[index];
+                alcohol = alcoLow[index];
+            }
+            else if (tavernQuality < 13)
+            {
+                alcohol = alcoMid[index];
             }
             else
             {
-                if (IsSouth())
-                    price = southDrinksPrices2[index];
-                else
-                    price = northDrinksPrices2[index];
+                alcohol = alcoHigh[index];
             }
-            uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            int alcohol = alcoholLevel[index];
 
             int holidayID = FormulaHelper.GetHolidayId(gameMinutes, GameManager.Instance.PlayerGPS.CurrentRegionIndex);
 
@@ -575,7 +755,7 @@ namespace ClimatesCalories
             }
             else
                 DaggerfallUI.AddHUDText("The drink refreshes you.");
-            playerEntity.IncreaseFatigue(1);
+            playerEntity.IncreaseFatigue((playerEntity.MaxFatigue / 20), true);
         }
 
 
@@ -583,71 +763,214 @@ namespace ClimatesCalories
 
 
 
-        static readonly string[] northTavernDrinks1 =  {
-            " 0 gold          Water",
+        static readonly string[] nLowDrinks =  {
             " 1 gold          Milk",
-            " 5 gold          Apple Cider",
-            " 6 gold          Brown Ale",
-            " 7 gold          Mead",
-            " 8 gold          Red Wine",
-            "10 gold          Potato Liquor"
+            " 5 gold          Spruce Tea",
+            " 6 gold          Apple Cider",
+            " 7 gold          Ale",
+            "10 gold          Moonshine"
         };
-        byte[] northDrinksPrices1 = { 0, 1, 5, 6, 7, 8, 10 };
 
-        static readonly string[] northTavernDrinks2 =  {
-            " 0 gold          Water",
-            " 1 gold          Apple Juice",
-            " 5 gold          Pear Cider",
+        static readonly string[] nMidDrinks =  {
+            " 1 gold          Milk",
+            " 5 gold          Herbal Tea",
+            " 6 gold          Ale",
+            " 7 gold          Bitter",
+            "10 gold          Mulled Wine",
+            "15 gold          Red Wine",
+            "20 gold          Rye Liquor"
+        };
+
+        static readonly string[] nHighDrinks =  {
+            " 1 gold          Berry Juice",
+            " 5 gold          Herbal Tea",
+            " 6 gold          Mint Tea",
+            " 7 gold          Ale",
+            "10 gold          Bitter",
+            "15 gold          Port",
+            "20 gold          Mulled Wine",
+            "25 gold          Red Wine",
+            "40 gold          Nereid Wine"
+        };
+
+        static readonly string[] neLowDrinks =  {
+            " 1 gold          Milk",
+            " 5 gold          Berry Juice",
+            " 6 gold          Pear Cider",
+            " 7 gold          Ale",
+            "10 gold          Morrowind Mazte"
+        };
+
+        static readonly string[] neMidDrinks =  {
+            " 1 gold          Fruit Juice",
+            " 5 gold          Mint Tea",
+            " 6 gold          Ale",
+            " 7 gold          Weat Beer",
+            "10 gold          Bitter",
+            "15 gold          Acai Mazte",
+            "20 gold          Vvrdenfell Flin"
+        };
+
+        static readonly string[] neHighDrinks =  {
+            " 1 gold          Fruit Juice",
+            " 5 gold          Herbal Tea",
+            " 6 gold          Mint Tea",
             " 7 gold          Golden Ale",
-            " 8 gold          Cherry Wine",
-            " 9 gold          Mulled Wine",
-            "13 gold          Quality Wine"
+            "10 gold          Stout",
+            "15 gold          Mulled Wine",
+            "20 gold          Port Wine",
+            "25 gold          Nereid Wine",
+            "40 gold          Cyrodiil Brandy"
         };
-        byte[] northDrinksPrices2 = { 0, 1, 5, 7, 8, 9, 13 };
 
-        static readonly string[] southTavernDrinks1 =  {
-            " 0 gold          Water",
+        static readonly string[] sLowDrinks =  {
             " 1 gold          Goats Milk",
-            " 4 gold          Fermented milk",
-            " 5 gold          Beer",
-            " 6 gold          Peach Wine",
-            " 7 gold          Fig Liquor",
-            " 8 gold          Jujube Wine"
+            " 5 gold          Coffee",
+            " 6 gold          Beer",
+            " 7 gold          Stout",
+            "10 gold          Rum"
         };
-        byte[] southDrinksPrices1 = { 0, 1, 4, 5, 6, 7, 8 };
 
-        static readonly string[] southTavernDrinks2 =  {
-            " 0 gold          Water",
-            " 1 gold          Kefir",
-            " 5 gold          Beer",
-            " 6 gold          Ginger Wine",
-            " 7 gold          Fig Wine",
-            " 8 gold          Pomgrenade Liquor",
-            "13 gold          Quality Liquor"
+        static readonly string[] sMidDrinks =  {
+            " 1 gold          Fruit Juice",
+            " 5 gold          Coffee",
+            " 6 gold          Beer",
+            " 7 gold          Stout",
+            "10 gold          Bitter",
+            "15 gold          Wine",
+            "20 gold          Rum"
         };
-        byte[] southDrinksPrices2 = { 0, 1, 5, 6, 7, 8, 13 };
 
-        byte[] alcoholLevel = { 0, 0, 10, 12, 16, 20, 25 };
+        static readonly string[] sHighDrinks =  {
+            " 1 gold          Fruit Juice",
+            " 5 gold          Coffee",
+            " 6 gold          Chai Tea",
+            " 7 gold          Weat Beer",
+            "10 gold          Beer",
+            "15 gold          Stout",
+            "20 gold          Bitter",
+            "25 gold          Wine",
+            "40 gold          Summerset Wine"
+        };
+
+        static readonly string[] woLowDrinks =  {
+            " 1 gold          Milk",
+            " 5 gold          Berry Juice",
+            " 6 gold          Ale",
+            " 7 gold          Mead",
+            "10 gold          Orc Grog"
+        };
+
+        static readonly string[] woMidDrinks =  {
+            " 1 gold          Berry Juice",
+            " 5 gold          Mint Tea",
+            " 6 gold          Ale",
+            " 7 gold          Mead",
+            "10 gold          Mulled Wine",
+            "15 gold          Red Wine",
+            "20 gold          Pine Rye"
+        };
+
+        static readonly string[] woHighDrinks =  {
+            " 1 gold          Berry Juice",
+            " 5 gold          Herbal Tea",
+            " 6 gold          Mint Tea",
+            " 7 gold          Ale",
+            "10 gold          Meat",
+            "15 gold          Stout",
+            "20 gold          Mulled Wine",
+            "25 gold          Red Wine",
+            "40 gold          Cyrodiil Brandy"
+        };
+
+        byte[] drinkPrices = { 1, 5, 6, 7, 10, 15, 20, 25, 40 };
+
+        byte[] alcoLow = { 0, 0, 10, 12, 30};
+        byte[] alcoMid = { 0, 0, 10, 12, 16, 20, 25 };
+        byte[] alcoHigh = { 0, 0, 0, 10, 12, 14, 16, 20, 25 };
 
 
-        static bool IsSouth()
+        static string regionMenu()
         {
+            //0 = Balfiera
+            //1 = North
+            //2 = NorthEast
+            //3 = South
+            //4 = SouthEast
+            //5 = Orisium and Wrothgarian
+
             PlayerGPS playerGPS = GameManager.Instance.PlayerGPS;
+            switch (playerGPS.CurrentRegionIndex)
+            {
+                case Regions.Anticlere:
+                case Regions.Betony:
+                case Regions.Bhoraine:
+                case Regions.Daenia:
+                case Regions.Daggerfall:
+                case Regions.Dwynnen:
+                case Regions.Glenpoint:
+                case Regions.GlenumbraMoors:
+                case Regions.IlessanHills:
+                case Regions.Kambria:
+                case Regions.Northmoor:
+                case Regions.Phrygias:
+                case Regions.Shalgora:
+                case Regions.Tulune:
+                case Regions.Urvaius:
+                case Regions.Ykalon:
+                    return "n";
+                case Regions.Alcaire:
+                case Regions.Gavaudon:
+                case Regions.Koegria:
+                case Regions.Menevia:
+                case Regions.Wayrest:
+                    return "ne";
+                case Regions.Kozanset:
+                case Regions.Lainlyn:
+                case Regions.Mournoth:
+                case Regions.Satakalaam:
+                case Regions.Totambu:
+                    return "se";
+                case Regions.AbibonGora:
+                case Regions.AlikrDesert:
+                case Regions.Antipyllos:
+                case Regions.Ayasofya:
+                case Regions.Bergama:
+                case Regions.Cybiades:
+                case Regions.DakFron:
+                case Regions.Dragontail:
+                case Regions.Ephesus:
+                case Regions.Kairou:
+                case Regions.Myrkwasa:
+                case Regions.Pothago:
+                case Regions.Santaki:
+                case Regions.Sentinel:
+                case Regions.Tigonus:
+                    return "s";
+                case Regions.Balfiera:
+                    return "b";
+                case Regions.Orsinium:
+                case Regions.Wrothgarian:
+                    return "o";
+
+            }
+
             switch (playerGPS.CurrentClimateIndex)
             {
                 case (int)MapsFile.Climates.Desert2:
                 case (int)MapsFile.Climates.Desert:
                 case (int)MapsFile.Climates.Subtropical:
+                    return "s";
                 case (int)MapsFile.Climates.Rainforest:
                 case (int)MapsFile.Climates.Swamp:
-                    return true;
+                    return "se";
                 case (int)MapsFile.Climates.Woodlands:
                 case (int)MapsFile.Climates.HauntedWoodlands:
                 case (int)MapsFile.Climates.MountainWoods:
                 case (int)MapsFile.Climates.Mountain:
-                    return false;
+                    return "n";
             }
-            return false;
+            return "n";
         }
 
         public static void Drunk()
@@ -777,5 +1100,71 @@ namespace ClimatesCalories
             int endPosY = startY + Random.Range(-1, 2);
             GameManager.Instance.StreamingWorld.TeleportToCoordinates(endPosX, endPosY, StreamingWorld.RepositionMethods.DirectionFromStartMarker);
         }
+    }
+
+    class Regions
+    {
+        public const int AlikrDesert = 0;
+        public const int Dragontail = 1;
+        public const int GlenpointF = 2;
+        public const int DaggerfallBluffs = 3;
+        public const int Yeorth = 4;
+        public const int Dwynnen = 5;
+        public const int Ravennian = 6;
+        public const int Devilrock = 7;
+        public const int Malekna = 8;
+        public const int Balfiera = 9;
+        public const int Bantha = 10;
+        public const int DakFron = 11;
+        public const int WesternIsles = 12;
+        public const int Tamaril = 13;
+        public const int LainlynC = 14;
+        public const int Bjoulae = 15;
+        public const int Wrothgarian = 16;
+        public const int Daggerfall = 17;
+        public const int Glenpoint = 18;
+        public const int Betony = 19;
+        public const int Sentinel = 20;
+        public const int Anticlere = 21;
+        public const int Lainlyn = 22;
+        public const int Wayrest = 23;
+        public const int GenTemHighRock = 24;
+        public const int GenRaiHammerfell = 25;
+        public const int Orsinium = 26;
+        public const int SkeffingtonW = 27;
+        public const int HammerfellBay = 28;
+        public const int HammerfellCoast = 29;
+        public const int HighRockBay = 30;
+        public const int HighRockSea = 31;
+        public const int Northmoor = 32;
+        public const int Menevia = 33;
+        public const int Alcaire = 34;
+        public const int Koegria = 35;
+        public const int Bhoraine = 36;
+        public const int Kambria = 37;
+        public const int Phrygias = 38;
+        public const int Urvaius = 39;
+        public const int Ykalon = 40;
+        public const int Daenia = 41;
+        public const int Shalgora = 42;
+        public const int AbibonGora = 43;
+        public const int Kairou = 44;
+        public const int Pothago = 45;
+        public const int Myrkwasa = 46;
+        public const int Ayasofya = 47;
+        public const int Tigonus = 48;
+        public const int Kozanset = 49;
+        public const int Satakalaam = 50;
+        public const int Totambu = 51;
+        public const int Mournoth = 52;
+        public const int Ephesus = 53;
+        public const int Santaki = 54;
+        public const int Antipyllos = 55;
+        public const int Bergama = 56;
+        public const int Gavaudon = 57;
+        public const int Tulune = 58;
+        public const int GlenumbraMoors = 59;
+        public const int IlessanHills = 60;
+        public const int Cybiades = 61;
     }
 }
