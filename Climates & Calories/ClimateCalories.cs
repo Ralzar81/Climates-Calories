@@ -45,6 +45,7 @@ namespace ClimatesCalories
         public uint WakeOrSleepTime;
         public bool FirstModUse;
         public int Drunk;
+        public bool StartRound;
     }
 
     public class ClimateCalories : MonoBehaviour, IHasModSaveData
@@ -81,7 +82,8 @@ namespace ClimatesCalories
                 SleepyCounter = 0,
                 WakeOrSleepTime = 0,
                 FirstModUse = true,
-                Drunk = 0
+                Drunk = 0,
+                StartRound = false
             };
         }
 
@@ -104,7 +106,8 @@ namespace ClimatesCalories
                 DeployedTentCondition = Camping.CampDmg,
                 SleepyCounter = Sleep.sleepyCounter,
                 WakeOrSleepTime = Sleep.wakeOrSleepTime,
-                Drunk = TavernWindow.drunk
+                Drunk = TavernWindow.drunk,
+                StartRound = startRound
             };
         }
 
@@ -127,13 +130,14 @@ namespace ClimatesCalories
             Sleep.sleepyCounter = climateCaloriesSaveData.SleepyCounter;
             Sleep.wakeOrSleepTime = climateCaloriesSaveData.WakeOrSleepTime;
             TavernWindow.drunk = climateCaloriesSaveData.Drunk;
+            startRound = climateCaloriesSaveData.StartRound;
 
             Camping.DestroyCamp();
             if (Camping.CampDeployed)
             {
                 Camping.DeployTent(true);
             }
-
+            isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
             restoreSaveRound = true;
 
             firstModUse = climateCaloriesSaveData.FirstModUse;
@@ -141,6 +145,11 @@ namespace ClimatesCalories
             {
                 playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
                 Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            }
+
+            if (startRound)
+            {
+                EntityEffectBroker.OnNewMagicRound += NewCharEffects_OnNewMagicRound;
             }
         }
 
@@ -158,6 +167,7 @@ namespace ClimatesCalories
         static bool fillingFoodOld = false;
         static bool restoreSaveRound = false;
         static bool firstModUse = false;
+        static bool startRound = false;
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -215,6 +225,8 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 197, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
+
+            EnemyDeath.OnEnemyDeath += Hunting.EnemyDeath_OnEnemyDeath;
         }
 
         private static void WaterSourceActivation(RaycastHit hit)
@@ -283,6 +295,14 @@ namespace ClimatesCalories
             mod.IsReady = true;
         }
 
+        static public DaggerfallUnityItem[] NewRandomLoot(LootChanceMatrix matrix, PlayerEntity playerEntity)
+        {
+            List<DaggerfallUnityItem> items = new List<DaggerfallUnityItem>();
+            return items.ToArray();
+        }
+
+
+
         static public int txtCount = 4;
         static public int wetWeather = 0;
         static public int wetEnvironment = 0;
@@ -302,10 +322,13 @@ namespace ClimatesCalories
         static private bool tooColdOrWarm = false;
         static private int sleepTemp = 0;
         static public bool playerIsWading = false;
+        static public bool isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
 
         const float stdInterval = 0.5f;
         static private bool lookingUp = false;
         static int fastTravelTime = 0;
+
+        static uint currentTime;
 
         void Start()
         {
@@ -321,6 +344,9 @@ namespace ClimatesCalories
 
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
                 return;
+
+            currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+
             if (fastTravelTime > 0 && !DaggerfallUI.Instance.FadeBehaviour.FadeInProgress)
             {
                 playerEntity.LastTimePlayerAteOrDrankAtTavern = Hunger.gameMinutes - 260;
@@ -328,18 +354,31 @@ namespace ClimatesCalories
                 Hunger.starving = false;
                 Hunger.starvDays = 0;
                 Hunger.FoodRot(fastTravelTime);
-                Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+                Sleep.wakeOrSleepTime = currentTime;
                 fastTravelTime = 0;
             }
-            Hunger.gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            Hunger.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
-            Hunger.hunger = Hunger.gameMinutes - Hunger.ateTime;
+
+            if (isVampire)
+            {
+                //Waiting for access to check when vampire last fed.
+                //Hunger.ateTime = DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects.VampirismEffect.lastTimeFed;
+                playerEntity.LastTimePlayerAteOrDrankAtTavern = Hunger.gameMinutes - 260;
+                Hunger.hungry = false;
+                Hunger.starving = false;
+                Hunger.starvDays = 0;
+                return;
+            }
+            else
+            {
+                Hunger.gameMinutes = currentTime;
+                Hunger.ateTime = playerEntity.LastTimePlayerAteOrDrankAtTavern;
+                Hunger.hunger = Hunger.gameMinutes - Hunger.ateTime;
+            }
             if (Hunger.hunger <= 239 && Hunger.hungry)
             {
                 Hunger.hungry = false;
                 Hunger.starving = false;
                 Hunger.starvDays = 0;
-                DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
             }
             else if (Hunger.starvDays >= 1 && !Hunger.starving)
             {
@@ -384,7 +423,7 @@ namespace ClimatesCalories
 
         private static void ClimatesCalories_OnStartGame(object sender, EventArgs e)
         {
-
+            startRound = true;
             EntityEffectBroker.OnNewMagicRound += NewCharEffects_OnNewMagicRound;
             DaggerfallUnityItem campEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 530);
             campEquip.currentCondition = 3;
@@ -432,7 +471,9 @@ namespace ClimatesCalories
                 GameManager.Instance.PlayerEntity.Items.AddItem(cloak);
                 GameManager.Instance.PlayerEntity.Items.AddItem(boots);
             }
-                EntityEffectBroker.OnNewMagicRound -= NewCharEffects_OnNewMagicRound;
+
+            startRound = false;
+            EntityEffectBroker.OnNewMagicRound -= NewCharEffects_OnNewMagicRound;
         }
 
         private static void ClimateIncomp_OnNewMagicRound()
@@ -478,7 +519,7 @@ namespace ClimatesCalories
                     DebuffAtt(debuffValue);
                 }
                 //When fast traveling counters resets.
-                else if (DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD)
+                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || playerEntity.InPrison)
                 {
                     txtCount = txtIntervals;
                     wetCount = 0;
@@ -522,6 +563,7 @@ namespace ClimatesCalories
                 //If not camping, bed sleeping or traveling, apply normal C&C effects.
                 else
                 {
+                    isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
                     TavernWindow.Drunk();
                     Hunger.FoodRotCounter();
                     Hunger.FoodRotter();
@@ -565,7 +607,7 @@ namespace ClimatesCalories
                     }
                     txtCount++;
 
-                    if (natCharTemp > 10 && Climates.gotDrink && !GameManager.IsGamePaused)
+                    if (natCharTemp > 10 && Climates.gotDrink && !GameManager.IsGamePaused && !isVampire)
                     {
                         thirst++;
                         if (thirst > 5)

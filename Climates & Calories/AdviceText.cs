@@ -64,10 +64,17 @@ namespace ClimatesCalories
                     }
                     messages.Add(string.Empty);
                 }
-                messages.Add(TxtFood());
-                messages.Add(string.Empty);
-                messages.Add(TxtSleep());
-
+                if (ClimateCalories.isVampire)
+                {
+                    messages.Add(TxtFood());
+                    messages.Add(string.Empty);
+                    messages.Add(TxtSleep());
+                }
+                else
+                {
+                    messages.Add("You have no need of food or sleep.");
+                }
+                
                 newBox.SetText(messages.ToArray());
 
                 newBox.ExtraProceedBinding = InputManager.Instance.GetBinding(InputManager.Actions.Status); // set proceed binding
@@ -253,7 +260,7 @@ namespace ClimatesCalories
             }
 
 
-            if (playerRace.ID == (int)Races.Vampire && playerEnterExit.IsPlayerInSunlight)
+            if (ClimateCalories.isVampire && playerEnterExit.IsPlayerInSunlight)
             {
                 if (natTemp > 0 && DaggerfallUnity.Instance.WorldTime.Now.IsDay && !hood)
                 {
@@ -508,7 +515,7 @@ namespace ClimatesCalories
                 }
             }
 
-            if (playerRace.ID == (int)Races.Vampire && playerEnterExit.IsPlayerInSunlight)
+            if (ClimateCalories.isVampire && playerEnterExit.IsPlayerInSunlight)
             {
                 if (natTemp > 0 && DaggerfallUnity.Instance.WorldTime.Now.IsDay && !hood)
                 {
@@ -529,7 +536,7 @@ namespace ClimatesCalories
         public static string TxtFood()
         {
             hunger = Hunger.hunger;
-            string foodString = "If you had a decent meal, you could go on for longer.";
+            string foodString = "You could do with a decent meal.";
 
             if (starving)
             {

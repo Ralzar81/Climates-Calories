@@ -16,6 +16,7 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.UserInterface;
 using System.Collections.Generic;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
+using System;
 
 namespace ClimatesCalories
 {
@@ -31,6 +32,170 @@ namespace ClimatesCalories
         public static bool huntingTime = false;
         public static bool hunting = false;
         static bool isWinter = false;
+        static GameObject carcass;
+
+        public static void EnemyDeath_OnEnemyDeath(object sender, EventArgs e)
+        {
+            luckMod = GameManager.Instance.PlayerEntity.Stats.LiveLuck / 10;
+            EnemyDeath enemyDeath = sender as EnemyDeath;
+            if (enemyDeath != null)
+            {
+                DaggerfallEntityBehaviour entityBehaviour = enemyDeath.GetComponent<DaggerfallEntityBehaviour>();
+                if (entityBehaviour != null)
+                {
+                    Debug.Log(entityBehaviour.Entity.Name);
+                    EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
+                    if (enemyEntity != null)
+                    {
+                        Debug.Log(enemyEntity.Name);
+                        bool humanoid = HumanoidCheck(enemyEntity.MobileEnemy.ID);
+                        if (enemyEntity.MobileEnemy.Affinity == MobileAffinity.Animal)
+                        {
+                            int meatAmount = GetMeatAmount(enemyEntity.MobileEnemy.ID);
+                            for (int i = 0; i < meatAmount; i++)
+                            {
+                                entityBehaviour.CorpseLootContainer.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex));
+                            }
+                        }
+                        else if (enemyEntity.MobileEnemy.Affinity == MobileAffinity.Human || humanoid)
+                        {
+                            int luckRoll = UnityEngine.Random.Range(1, 10) + (luckMod - 5);
+                            Debug.Log(entityBehaviour.Entity.Name + ", luckRoll = " + luckRoll.ToString());
+                            if (luckRoll > 5)
+                            {
+                                DaggerfallUnityItem foodItem = FoodLoot();
+                                entityBehaviour.CorpseLootContainer.Items.AddItem(foodItem);
+                            }
+                            if (luckRoll > 8)
+                            {
+                                DaggerfallUnityItem foodItem2 = FoodLoot();
+                                entityBehaviour.CorpseLootContainer.Items.AddItem(foodItem2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static int GetMeatAmount(int enemyID)
+        {
+            int meatAmount = 0;
+            switch (enemyID)
+            {
+                case (int)MobileTypes.GrizzlyBear:
+                    meatAmount = UnityEngine.Random.Range(3, 4 + luckMod);
+                    break;
+                case (int)MobileTypes.SabertoothTiger:
+                    meatAmount = UnityEngine.Random.Range(2, 3 + luckMod);
+                    break;
+                case (int)MobileTypes.GiantScorpion:
+                    meatAmount = UnityEngine.Random.Range(1, 2 + luckMod);
+                    break;
+                case (int)MobileTypes.Spider:
+                    meatAmount = UnityEngine.Random.Range(1, 1 + luckMod);
+                    break;
+                case (int)MobileTypes.Rat:
+                    meatAmount = 1;
+                    break;
+                case (int)MobileTypes.GiantBat:
+                    meatAmount = 1;
+                    break;
+            }
+            return meatAmount;
+        }
+
+        private static bool HumanoidCheck(int enemyID)
+        {
+            switch (enemyID)
+            {
+                case (int)MobileTypes.Orc:
+                case (int)MobileTypes.Centaur:
+                case (int)MobileTypes.OrcSergeant:
+                case (int)MobileTypes.Giant:
+                case (int)MobileTypes.OrcShaman:
+                case (int)MobileTypes.OrcWarlord:
+                    return true;
+            }
+            return false;
+        }
+
+        private static DaggerfallUnityItem FoodLoot()
+        {
+            DaggerfallUnityItem food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531);
+            int roll = UnityEngine.Random.Range(1, 11);
+
+            switch (roll)
+            {
+                case 10:
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex);
+                    break;
+                case 9:
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemFish.templateIndex);
+                    break;
+                case 8:
+                case 7:
+                    food.weightInKg -= UnityEngine.Random.Range(0.1f, 1.8f);
+                    break;
+                case 6:
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemBread.templateIndex);
+                    break;
+                case 5:
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemSaltedFish.templateIndex);
+                    break;
+                case 4:
+                case 3:
+                case 2:
+                case 1:
+                    if (climate == (int)MapsFile.Climates.Subtropical || climate == (int)MapsFile.Climates.Desert || climate == (int)MapsFile.Climates.Desert2)
+                    {
+                        if (roll > 2)
+                        {
+                            food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 539);
+                            food.weightInKg -= UnityEngine.Random.Range(0.1f, 1.8f);
+                        }
+                        else
+                            food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemOrange.templateIndex);
+                    }
+                    else
+                        food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemApple.templateIndex);
+                    break;
+            }
+
+            if (food.TemplateIndex != 531 && food.TemplateIndex != 539)
+            {
+                int rotChance = UnityEngine.Random.Range(1, 110);
+                AbstractItemFood absFood = food as AbstractItemFood;
+                if (rotChance > food.maxCondition && !absFood.RotFood())
+                {
+                    absFood.RotFood();
+                }
+            }
+            return food;
+        }
+
+        private static DaggerfallUnityItem AnimalMeat(int enemyID)
+        {
+            DaggerfallUnityItem food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex);
+            AbstractItemFood absFood = food as AbstractItemFood;
+            int roll = UnityEngine.Random.Range(0,11);
+            switch (enemyID)
+            {
+
+                case (int)MobileTypes.GiantScorpion:
+                case (int)MobileTypes.Spider:
+                    absFood.RotFood();
+                    break;
+                case (int)MobileTypes.Rat:
+                case (int)MobileTypes.GiantBat:
+                    absFood.RotFood();
+                    break;
+            }
+            if (roll > 9)
+            {
+                absFood.RotFood();
+            }
+            return food;
+        }
 
 
         private static bool PlayerHasBow()
@@ -57,10 +222,10 @@ namespace ClimatesCalories
                 int roll;
                 if (isWinter)
                 {
-                    roll = Random.Range(1, 300) - luckMod;
+                    roll = UnityEngine.Random.Range(1, 300) - luckMod;
                 }
                 else
-                    roll = Random.Range(1, 200) - luckMod;
+                    roll = UnityEngine.Random.Range(1, 200) - luckMod;
 
                 if (roll < 2)
                 {
@@ -83,12 +248,12 @@ namespace ClimatesCalories
 
         public static void HuntCheck()
         {
-            int lckRoll = Random.Range(1, 110);
+            int lckRoll = UnityEngine.Random.Range(1, 110);
             lucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck ? true : false;
             vLucky = lckRoll < GameManager.Instance.PlayerEntity.Stats.LiveLuck / 2 ? true : false;
             vUnLucky = lckRoll > GameManager.Instance.PlayerEntity.Stats.LiveLuck + 30 ? true : false;
 
-            huntingTimer = Random.Range(100, 500);
+            huntingTimer = UnityEngine.Random.Range(100, 500);
 
             climate = GameManager.Instance.PlayerGPS.CurrentClimateIndex;
 
@@ -118,7 +283,7 @@ namespace ClimatesCalories
         //Method for checking hunting in desert. Going to either DesertHunting_OnButtonClick or DesertWater_OnButtonClick.
         private static void DesertHuntingRoll()
         {
-            int roll = Random.Range(1, 11);
+            int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7 && Climates.gotDrink)
             {
@@ -169,9 +334,9 @@ namespace ClimatesCalories
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
-            int huntingRoll = Random.Range(1, 101);
-            int genRoll = Random.Range(1, 101);
-            Poisons poisonType = (Poisons)Random.Range(128, 140);
+            int huntingRoll = UnityEngine.Random.Range(1, 101);
+            int genRoll = UnityEngine.Random.Range(1, 101);
+            Poisons poisonType = (Poisons)UnityEngine.Random.Range(128, 140);
 
             if (lucky)
             {
@@ -279,7 +444,7 @@ namespace ClimatesCalories
         //Method for checking hunting in tropics. Going to either SubtropicalHunting_OnButtonClick or DesertWater_OnButtonClick.
         private static void SubtropicalHuntingRoll()
         {
-            int roll = Random.Range(1, 11);
+            int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7 && Climates.gotDrink)
             {
@@ -326,8 +491,8 @@ namespace ClimatesCalories
         private static void SubtropicalHuntingCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            int genRoll = Random.Range(1, 90);
-            Poisons poisonType = (Poisons)Random.Range(128, 140);
+            int genRoll = UnityEngine.Random.Range(1, 90);
+            Poisons poisonType = (Poisons)UnityEngine.Random.Range(128, 140);
 
             if (lucky)
             {
@@ -336,7 +501,7 @@ namespace ClimatesCalories
                 {
                     string[] messages = new string[] { "You spot some fruits on a small tree and easily pick them." };
                     ClimateCalories.TextPopup(messages);
-                    int fruit = Random.Range(1, 10);
+                    int fruit = UnityEngine.Random.Range(1, 10);
                     GiveOranges(fruit);
                 }
                 //Lucky
@@ -346,7 +511,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You spot some fruits left on the highest branches of a tree.", "", "You climb up between the branches and pick some fruit." };
                         ClimateCalories.TextPopup(messages);
-                        int fruit = Random.Range(1, 5);
+                        int fruit = UnityEngine.Random.Range(1, 5);
                         GiveOranges(fruit);
                         playerEntity.TallySkill(DFCareer.Skills.Climbing, 1);
                     }
@@ -391,8 +556,8 @@ namespace ClimatesCalories
         private static void DesertWaterCheck()
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
-            int genRoll = Random.Range(1, 101);
-            Diseases diseaseType = (Diseases)Random.Range(0, 17);
+            int genRoll = UnityEngine.Random.Range(1, 101);
+            Diseases diseaseType = (Diseases)UnityEngine.Random.Range(0, 17);
 
             if (lucky)
             {
@@ -448,7 +613,7 @@ namespace ClimatesCalories
         //Method for checking hunting in swamps. Going to either BirdHunting_OnButtonClick or SwampHunt_OnButtonClick.
         private static void SwampHuntingRoll()
         {
-            int roll = Random.Range(1, 11);
+            int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7)
             {
@@ -492,7 +657,7 @@ namespace ClimatesCalories
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
-            int skillRoll = Random.Range(1, 90);
+            int skillRoll = UnityEngine.Random.Range(1, 90);
 
             //Very unlucky
             if (vUnLucky)
@@ -507,7 +672,7 @@ namespace ClimatesCalories
                 skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Archery) / 2;
                 if (skillRoll < skillSum - 30)
                 {
-                    int meat = Random.Range(2, 5);
+                    int meat = UnityEngine.Random.Range(2, 5);
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", "but you manage to loose several more arrows before they are out of range.", "", "You pick up the " + meat.ToString() + " dead birds and spend some time preparing them." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -566,7 +731,7 @@ namespace ClimatesCalories
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
-            int skillRoll = Random.Range(1, 110);
+            int skillRoll = UnityEngine.Random.Range(1, 110);
 
             //Very unlucky
             if (vUnLucky)
@@ -581,7 +746,7 @@ namespace ClimatesCalories
                 skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Archery) / 2;
                 if (skillRoll < skillSum)
                 {
-                    int meat = Random.Range(1, 2);
+                    int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "Another ripple in the water appear and you release an arrow.", "", "You pull your scaly prey out of the swamp and butcher it." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -600,7 +765,7 @@ namespace ClimatesCalories
                 skillSum += playerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.CriticalStrike) / 2;
                 if (skillRoll < skillSum)
                 {
-                    int meat = Random.Range(1, 2);
+                    int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "Your strike connect with a satisfying sound, and leverage the struggling lizard out of the water.", "", "You spend some time butchering the animal." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -609,7 +774,7 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                    Poisons poisonType = (Poisons)Random.Range(128, 140);
+                    Poisons poisonType = (Poisons)UnityEngine.Random.Range(128, 140);
                     if (lucky)
                     {
                         string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "The ripples never appear again. Finally, you give up." };
@@ -630,7 +795,7 @@ namespace ClimatesCalories
         //Method for checking hunting in woods. Going to either BirdHunting_OnButtonClick or WoodHunt_OnButtonClick.
         private static void WoodsHuntingRoll()
         {
-            int roll = Random.Range(1, 11);
+            int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7)
             {
@@ -680,7 +845,7 @@ namespace ClimatesCalories
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
-            int skillRoll = Random.Range(1, 101);
+            int skillRoll = UnityEngine.Random.Range(1, 101);
 
             //Very unlucky
             if (vUnLucky)
@@ -697,7 +862,7 @@ namespace ClimatesCalories
                 //Success
                 if (skillRoll + 30 < skillSum)
                 {
-                    int meat = Random.Range(4, 6);
+                    int meat = UnityEngine.Random.Range(4, 6);
                     string[] messages = new string[] { "You track a set of deer prints for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The deer takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -734,7 +899,7 @@ namespace ClimatesCalories
                 //Success
                 if (skillRoll < skillSum)
                 {
-                    int meat = Random.Range(1, 2);
+                    int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -764,7 +929,7 @@ namespace ClimatesCalories
         //Method for checking hunting in mountains. Going to either BirdHunting_OnButtonClick or MountainHunt_OnButtonClick.
         private static void MountainHuntingRoll()
         {
-            int roll = Random.Range(1, 11);
+            int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (roll > 7)
             {
@@ -808,7 +973,7 @@ namespace ClimatesCalories
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             bool playerHasBow = PlayerHasBow();
             int skillSum = 0;
-            int skillRoll = Random.Range(1, 101);
+            int skillRoll = UnityEngine.Random.Range(1, 101);
 
             //Very unlucky
             if (vUnLucky)
@@ -825,7 +990,7 @@ namespace ClimatesCalories
                 //Success
                 if (skillRoll + 30 < skillSum)
                 {
-                    int meat = Random.Range(3, 5);
+                    int meat = UnityEngine.Random.Range(3, 5);
                     string[] messages = new string[] { "You follow the trail of a mountain goat for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The goat takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -862,7 +1027,7 @@ namespace ClimatesCalories
                 //Success
                 if (skillRoll < skillSum)
                 {
-                    int meat = Random.Range(1, 2);
+                    int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
                     GiveMeat(meat);
@@ -922,17 +1087,22 @@ namespace ClimatesCalories
 
         private static void MovePlayer()
         {
-            //int rollX = Random.Range(-50, 51);
-            //int rollY = Random.Range(-50, 51);
+            //int rollX = UnityEngine.Random.Range(-50, 51);
+            //int rollY = UnityEngine.Random.Range(-50, 51);
             //int destinationPosX = (int)GameManager.Instance.PlayerObject.transform.position.x + rollX;
             //int destinationPosY = (int)GameManager.Instance.PlayerObject.transform.position.y + rollY;
             //GameManager.Instance.StreamingWorld.TeleportToCoordinates(destinationPosX, destinationPosY, StreamingWorld.RepositionMethods.DirectionFromStartMarker);
         }
 
-        private static void TimeSkip()
+        private static void TimeSkip(bool hunting = true)
         {
             huntingTime = true;
-            int skipAmount = Mathf.Max(Random.Range(20, 120) - (GameManager.Instance.PlayerEntity.Stats.LiveSpeed / 10), 5);
+            int skipAmount;
+            if (hunting)
+                skipAmount = Mathf.Max(UnityEngine.Random.Range(20, 120) - (GameManager.Instance.PlayerEntity.Stats.LiveSpeed / 10), 5);
+            else
+                skipAmount = UnityEngine.Random.Range(10, 30);
+
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
             GameManager.Instance.PlayerEntity.DecreaseFatigue(skipAmount, true);
             huntingTime = false;
@@ -941,7 +1111,7 @@ namespace ClimatesCalories
         private static void SpawnBeast()
         {
 
-            int roll = Random.Range(0, 11);
+            int roll = UnityEngine.Random.Range(0, 11);
             GameObject player = GameManager.Instance.PlayerObject;
             MobileTypes beast = MobileTypes.None;
             int count = 1;
@@ -1039,7 +1209,7 @@ namespace ClimatesCalories
 
             //GameObjectHelper.CreateFoeSpawner(true, beast, count, 8, 20);
             ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
-            int range = Random.Range(2,8);
+            int range = UnityEngine.Random.Range(2,8);
             GameObject[] mobiles = GameObjectHelper.CreateFoeGameObjects(player.transform.position, beast, count);
             mobiles[0].transform.position = player.transform.position - player.transform.forward * range;
             mobiles[0].transform.LookAt(player.transform.position);

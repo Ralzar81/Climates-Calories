@@ -118,12 +118,25 @@ namespace ClimatesCalories
 
                 collection.RemoveItem(this);
                 DaggerfallUI.MessageBox(string.Format("You eat the {0}.", shortName));
+                DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
             }
             else
             {
                 DaggerfallUI.MessageBox(string.Format("You are not hungry enough to eat the {0} right now.", shortName));
             }
             return true;
+        }
+
+        public void FoodOnHUD()
+        {
+            if (ClimateCalories.isVampire)
+            {
+                DaggerfallUI.AddHUDText("The meal does nothing for you.");
+            }
+            else
+            {
+                DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
+            }
         }
     }
 

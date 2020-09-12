@@ -26,10 +26,16 @@ namespace ClimatesCalories
         static public uint wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
         static public uint awakeOrAsleepHours = 0;
         static private bool awake = true;
+        static private uint currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
 
         static public void SleepCheck(int sleepTemp = 0)
         {
-
+            currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            if (ClimateCalories.isVampire)
+            {
+                sleepyCounter = 0;
+                return;
+            }
             if (playerEntity.IsResting && (playerEnterExit.IsPlayerInsideBuilding || ClimateCalories.camping))
             {
                 Sleeping(sleepTemp);
@@ -51,12 +57,12 @@ namespace ClimatesCalories
             if (!awake)
             {
                 awake = true;
-                wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+                wakeOrSleepTime = currentTime;
                 if (sleepyCounter > 0)
                     DaggerfallUI.AddHUDText("You need more rest...");
             }
 
-            gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            gameMinutes = currentTime;
             awakeOrAsleepHours = (gameMinutes - wakeOrSleepTime) / 60;
             sleepyCounter += Mathf.Max((int)(awakeOrAsleepHours - 6) / 6, 0);
 
@@ -98,15 +104,15 @@ namespace ClimatesCalories
             if (awake)
             {
                 awake = false;
-                wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+                wakeOrSleepTime = currentTime;
             }
 
-            gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            gameMinutes = currentTime;
             awakeOrAsleepHours = (gameMinutes - wakeOrSleepTime) / 60;
 
             if (awakeOrAsleepHours >= 1)
             {
-                wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() + (uint)sleepTemp;
+                wakeOrSleepTime = currentTime + (uint)sleepTemp;
                 sleepyCounter--;
             }
         }

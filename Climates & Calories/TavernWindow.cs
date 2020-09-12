@@ -491,6 +491,7 @@ namespace ClimatesCalories
                 DaggerfallUI.MessageBox("You are too full to finish your meal. The rest goes to waste.");
                 playerEntity.LastTimePlayerAteOrDrankAtTavern = gameMinutes;
             }
+            DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
         }
 
         byte[] calories = { 80, 120, 150, 200, 240 };
@@ -710,10 +711,12 @@ namespace ClimatesCalories
             else if (tavernQuality < 13)
             {
                 alcohol = alcoMid[index];
+                price *= 2;
             }
             else
             {
                 alcohol = alcoHigh[index];
+                price *= 3;
             }
 
             int holidayID = FormulaHelper.GetHolidayId(gameMinutes, GameManager.Instance.PlayerGPS.CurrentRegionIndex);
@@ -742,11 +745,11 @@ namespace ClimatesCalories
             DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
             PassTime(600);
             DaggerfallUI.Instance.FadeBehaviour.FadeHUDFromBlack();
-            drunk += alcohol;
+            drunk += (alcohol*10);
             Debug.Log("drunk = " + drunk.ToString());
             if (drunk > playerEntity.Stats.LiveEndurance)
                 ShitFaced();
-            else if (drunk > playerEntity.Stats.LiveEndurance / 2)
+            else if (drunk / 10 > playerEntity.Stats.LiveEndurance / 2)
                 DaggerfallUI.AddHUDText("You are getting drunk...");
             else if (alcohol > 0)
             {
@@ -761,129 +764,129 @@ namespace ClimatesCalories
 
 
 
-
+        byte[] drinkPrices = { 1, 2, 2, 3, 4, 6, 7, 8, 10 };
 
         static readonly string[] nLowDrinks =  {
-            " 1 gold          Milk",
-            " 5 gold          Spruce Tea",
-            " 6 gold          Apple Cider",
-            " 7 gold          Ale",
-            "10 gold          Moonshine"
+            " 1 gold          Goats Milk",
+            " 2 gold          Spruce Tea",
+            " 2 gold          Apple Cider",
+            " 3 gold          Ale",
+            " 4 gold          Moonshine"
         };
 
         static readonly string[] nMidDrinks =  {
-            " 1 gold          Milk",
-            " 5 gold          Herbal Tea",
-            " 6 gold          Ale",
-            " 7 gold          Bitter",
-            "10 gold          Mulled Wine",
-            "15 gold          Red Wine",
-            "20 gold          Rye Liquor"
+            " 2 gold          Cows Milk",
+            " 4 gold          Herbal Tea",
+            " 4 gold          Ale",
+            " 6 gold          Bitter",
+            " 8 gold          Mulled Wine",
+            "12 gold          Red Wine",
+            "14 gold          Rye Liquor"
         };
 
         static readonly string[] nHighDrinks =  {
-            " 1 gold          Berry Juice",
-            " 5 gold          Herbal Tea",
+            " 3 gold          Berry Juice",
+            " 6 gold          Herbal Tea",
             " 6 gold          Mint Tea",
-            " 7 gold          Ale",
-            "10 gold          Bitter",
-            "15 gold          Port",
-            "20 gold          Mulled Wine",
-            "25 gold          Red Wine",
-            "40 gold          Nereid Wine"
+            " 9 gold          Ale",
+            "12 gold          Bitter",
+            "18 gold          Port",
+            "21 gold          Mulled Wine",
+            "24 gold          Red Wine",
+            "30 gold          Nereid Wine"
         };
 
         static readonly string[] neLowDrinks =  {
-            " 1 gold          Milk",
-            " 5 gold          Berry Juice",
-            " 6 gold          Pear Cider",
-            " 7 gold          Ale",
-            "10 gold          Morrowind Mazte"
+            " 1 gold          Goats Milk",
+            " 2 gold          Berry Juice",
+            " 2 gold          Pear Cider",
+            " 3 gold          Ale",
+            " 4 gold          Morrowind Mazte"
         };
 
         static readonly string[] neMidDrinks =  {
-            " 1 gold          Fruit Juice",
-            " 5 gold          Mint Tea",
-            " 6 gold          Ale",
-            " 7 gold          Weat Beer",
-            "10 gold          Bitter",
-            "15 gold          Acai Mazte",
-            "20 gold          Vvrdenfell Flin"
+            " 2 gold          Fruit Juice",
+            " 4 gold          Mint Tea",
+            " 4 gold          Ale",
+            " 6 gold          Weat Beer",
+            " 8 gold          Bitter",
+            "12 gold          Acai Mazte",
+            "14 gold          Vvrdenfell Flin"
         };
 
         static readonly string[] neHighDrinks =  {
-            " 1 gold          Fruit Juice",
-            " 5 gold          Herbal Tea",
+            " 3 gold          Fruit Juice",
+            " 6 gold          Herbal Tea",
             " 6 gold          Mint Tea",
-            " 7 gold          Golden Ale",
-            "10 gold          Stout",
-            "15 gold          Mulled Wine",
-            "20 gold          Port Wine",
-            "25 gold          Nereid Wine",
-            "40 gold          Cyrodiil Brandy"
+            " 9 gold          Golden Ale",
+            "12 gold          Stout",
+            "18 gold          Mulled Wine",
+            "21 gold          Port Wine",
+            "24 gold          Nereid Wine",
+            "30 gold          Cyrodiil Brandy"
         };
 
         static readonly string[] sLowDrinks =  {
-            " 1 gold          Goats Milk",
-            " 5 gold          Coffee",
-            " 6 gold          Beer",
-            " 7 gold          Stout",
-            "10 gold          Rum"
+            " 1 gold          Camel Milk",
+            " 2 gold          Coffee",
+            " 2 gold          Beer",
+            " 3 gold          Stout",
+            " 4 gold          Rum"
         };
 
         static readonly string[] sMidDrinks =  {
-            " 1 gold          Fruit Juice",
-            " 5 gold          Coffee",
-            " 6 gold          Beer",
-            " 7 gold          Stout",
-            "10 gold          Bitter",
-            "15 gold          Wine",
-            "20 gold          Rum"
+            " 2 gold          Fruit Juice",
+            " 4 gold          Coffee",
+            " 4 gold          Beer",
+            " 6 gold          Stout",
+            " 8 gold          Bitter",
+            "12 gold          Wine",
+            "14 gold          Rum"
         };
 
         static readonly string[] sHighDrinks =  {
-            " 1 gold          Fruit Juice",
-            " 5 gold          Coffee",
+            " 3 gold          Fruit Juice",
+            " 6 gold          Coffee",
             " 6 gold          Chai Tea",
-            " 7 gold          Weat Beer",
-            "10 gold          Beer",
-            "15 gold          Stout",
-            "20 gold          Bitter",
-            "25 gold          Wine",
-            "40 gold          Summerset Wine"
+            " 9 gold          Weat Beer",
+            "12 gold          Beer",
+            "18 gold          Stout",
+            "21 gold          Bitter",
+            "24 gold          Wine",
+            "30 gold          Summerset Wine"
         };
 
         static readonly string[] woLowDrinks =  {
-            " 1 gold          Milk",
-            " 5 gold          Berry Juice",
-            " 6 gold          Ale",
-            " 7 gold          Mead",
-            "10 gold          Orc Grog"
+            " 1 gold          Goats Milk",
+            " 2 gold          Berry Juice",
+            " 2 gold          Ale",
+            " 3 gold          Mead",
+            " 4 gold          Orc Grog"
         };
 
         static readonly string[] woMidDrinks =  {
-            " 1 gold          Berry Juice",
-            " 5 gold          Mint Tea",
-            " 6 gold          Ale",
-            " 7 gold          Mead",
-            "10 gold          Mulled Wine",
-            "15 gold          Red Wine",
-            "20 gold          Pine Rye"
+            " 2 gold          Berry Juice",
+            " 4 gold          Mint Tea",
+            " 4 gold          Ale",
+            " 6 gold          Mead",
+            "18 gold          Mulled Wine",
+            "12 gold          Red Wine",
+            "14 gold          Pine Rye"
         };
 
         static readonly string[] woHighDrinks =  {
-            " 1 gold          Berry Juice",
-            " 5 gold          Herbal Tea",
+            " 3 gold          Berry Juice",
+            " 6 gold          Herbal Tea",
             " 6 gold          Mint Tea",
-            " 7 gold          Ale",
-            "10 gold          Meat",
-            "15 gold          Stout",
-            "20 gold          Mulled Wine",
-            "25 gold          Red Wine",
-            "40 gold          Cyrodiil Brandy"
+            " 9 gold          Ale",
+            "12 gold          Meat",
+            "18 gold          Stout",
+            "21 gold          Mulled Wine",
+            "24 gold          Red Wine",
+            "30 gold          Cyrodiil Brandy"
         };
 
-        byte[] drinkPrices = { 1, 5, 6, 7, 10, 15, 20, 25, 40 };
+        
 
         byte[] alcoLow = { 0, 0, 10, 12, 30};
         byte[] alcoMid = { 0, 0, 10, 12, 16, 20, 25 };
@@ -975,16 +978,18 @@ namespace ClimatesCalories
 
         public static void Drunk()
         {
+            int resistance = (playerEntity.Stats.LiveEndurance + playerEntity.Resistances.LiveDiseaseOrPoison) / 2;
+
             if (drunk > 0)
                 drunk--;
             else
                 drunk = 0;
 
-            if(drunk > playerEntity.Stats.LiveEndurance / 2)
+            if(drunk / 10 > resistance)
             {
                 EntityEffectManager playerEffectManager = GameManager.Instance.PlayerEntity.EntityBehaviour.GetComponent<EntityEffectManager>();
 
-                int alcEffect = drunk - playerEntity.Stats.LiveEndurance / 2;
+                int alcEffect = (drunk / 10) - resistance;
                 int[] statMods = new int[DaggerfallStats.Count];
                 int currentAg = playerEntity.Stats.PermanentAgility;
                 int currentInt = playerEntity.Stats.PermanentIntelligence;
