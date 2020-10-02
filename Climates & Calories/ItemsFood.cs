@@ -92,6 +92,7 @@ namespace ClimatesCalories
             {
                 FoodStatus++;
                 shortName = GetFoodStatus() + ItemTemplate.name;
+                value = 0;
                 return false;
             }
             return true;

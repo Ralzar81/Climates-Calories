@@ -331,11 +331,17 @@ namespace ClimatesCalories
 
 
         public static int drunk = 0;
-
+        private static int drunkCounter = 0;
 
         protected void DoFood()
         {
             CloseWindow();
+            int hour = DaggerfallUnity.Instance.WorldTime.Now.Hour;
+            if ((hour >= DaggerfallDateTime.MidnightHour) && (hour < DaggerfallDateTime.DawnHour))
+            {
+                DaggerfallUI.MessageBox("Sorry, the kitchen is closed for the night.");
+                return;
+            }
 
             int tavernQuality = playerEnterExit.Interior.BuildingData.Quality;
 
@@ -745,20 +751,22 @@ namespace ClimatesCalories
             DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
             PassTime(600);
             DaggerfallUI.Instance.FadeBehaviour.FadeHUDFromBlack();
-            drunk += (alcohol*10);
-            Debug.Log("drunk = " + drunk.ToString());
+            drunk += alcohol;
+            Debug.Log("[Climates & Calories]  drunk = " + drunk.ToString());
             if (drunk > playerEntity.Stats.LiveEndurance)
                 ShitFaced();
-            else if (drunk / 10 > playerEntity.Stats.LiveEndurance / 2)
+            else if (drunk > playerEntity.Stats.LiveEndurance / 2)
                 DaggerfallUI.AddHUDText("You are getting drunk...");
             else if (alcohol > 0)
             {
                 DaggerfallUI.AddHUDText("The drink fortifies you.");
-                playerEntity.IncreaseFatigue(alcohol);
+                playerEntity.IncreaseFatigue(alcohol, true);
             }
             else
+            {
                 DaggerfallUI.AddHUDText("The drink refreshes you.");
-            playerEntity.IncreaseFatigue((playerEntity.MaxFatigue / 20), true);
+                playerEntity.IncreaseFatigue(5, true);
+            }
         }
 
 
@@ -888,9 +896,9 @@ namespace ClimatesCalories
 
         
 
-        byte[] alcoLow = { 0, 0, 10, 12, 30};
-        byte[] alcoMid = { 0, 0, 10, 12, 16, 20, 25 };
-        byte[] alcoHigh = { 0, 0, 0, 10, 12, 14, 16, 20, 25 };
+        byte[] alcoLow = { 0, 0, 10, 12, 25};
+        byte[] alcoMid = { 0, 0, 10, 12, 15, 20, 30 };
+        byte[] alcoHigh = { 0, 0, 0, 10, 12, 15, 20, 20, 40 };
 
 
         static string regionMenu()
@@ -978,29 +986,27 @@ namespace ClimatesCalories
 
         public static void Drunk()
         {
-            int resistance = (playerEntity.Stats.LiveEndurance + playerEntity.Resistances.LiveDiseaseOrPoison) / 2;
-
             if (drunk > 0)
-                drunk--;
-            else
-                drunk = 0;
+            {
+                drunkCounter++;
+                if (drunkCounter > 10)
+                {
+                    drunkCounter = 0;
+                    drunk--;
+                }
+            }
 
-            if(drunk / 10 > resistance)
+            if(drunk > playerEntity.Stats.LiveEndurance / 2)
             {
                 EntityEffectManager playerEffectManager = GameManager.Instance.PlayerEntity.EntityBehaviour.GetComponent<EntityEffectManager>();
 
-                int alcEffect = (drunk / 10) - resistance;
+                int alcEffect = (drunk - (playerEntity.Stats.LiveEndurance/2)) / 10;
                 int[] statMods = new int[DaggerfallStats.Count];
-                int currentAg = playerEntity.Stats.PermanentAgility;
-                int currentInt = playerEntity.Stats.PermanentIntelligence;
-                int currentWill = playerEntity.Stats.PermanentWillpower;
-                int currentPer = playerEntity.Stats.PermanentPersonality;
-                int currentSpd = playerEntity.Stats.PermanentSpeed;
-                statMods[(int)DFCareer.Stats.Agility] = -Mathf.Min(alcEffect, currentAg - 5);
-                statMods[(int)DFCareer.Stats.Intelligence] = -Mathf.Min(alcEffect, currentInt - 5);
-                statMods[(int)DFCareer.Stats.Willpower] = -Mathf.Min(alcEffect, currentWill - 5);
-                statMods[(int)DFCareer.Stats.Personality] = 20 - Mathf.Min(alcEffect, currentPer - 5);
-                statMods[(int)DFCareer.Stats.Speed] = -Mathf.Min(alcEffect, currentSpd - 5);
+                statMods[(int)DFCareer.Stats.Agility] = -Mathf.Min(alcEffect, playerEntity.Stats.PermanentAgility - 5);
+                statMods[(int)DFCareer.Stats.Intelligence] = -Mathf.Min(alcEffect, playerEntity.Stats.PermanentIntelligence - 5);
+                statMods[(int)DFCareer.Stats.Willpower] = -Mathf.Min(alcEffect, playerEntity.Stats.PermanentWillpower - 5);
+                statMods[(int)DFCareer.Stats.Personality] = 20 - Mathf.Min(alcEffect, playerEntity.Stats.PermanentPersonality - 5);
+                statMods[(int)DFCareer.Stats.Speed] = -Mathf.Min(alcEffect, playerEntity.Stats.PermanentSpeed - 5);
                 playerEffectManager.MergeDirectStatMods(statMods);
             }
         }
@@ -1015,8 +1021,8 @@ namespace ClimatesCalories
         {
             int stats = playerEntity.Stats.LiveLuck + playerEntity.Stats.LivePersonality;
             int roll = Random.Range(0, 200) - stats;
-            int playerGold = playerEntity.GetGoldAmount();
-            int goldPenalty = Random.Range(1, 3);
+            int playerGold = Mathf.Max(playerEntity.GoldPieces, 4);
+            int goldPenalty = Random.Range(2, playerGold);
 
             if (roll < 1)
             {
@@ -1037,7 +1043,7 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                    playerEntity.DeductGoldAmount(playerGold / goldPenalty);
+                    playerEntity.GoldPieces -= (Mathf.Max(playerGold / goldPenalty, 1));
                     DrunkBed();
                     PassTime(Random.Range(50000, 160000));
                     if (goldPenalty > 1)

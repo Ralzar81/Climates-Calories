@@ -14,12 +14,9 @@ using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 using UnityEngine;
 using System;
 using DaggerfallWorkshop;
-using DaggerfallConnect.Arena2;
-using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Serialization;
 using System.Collections.Generic;
-using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallConnect.Utility;
 
 namespace ClimatesCalories
@@ -141,15 +138,10 @@ namespace ClimatesCalories
             restoreSaveRound = true;
 
             firstModUse = climateCaloriesSaveData.FirstModUse;
-            if(firstModUse)
+            if(firstModUse || Sleep.wakeOrSleepTime == 0)
             {
                 playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
                 Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            }
-
-            if (startRound)
-            {
-                EntityEffectBroker.OnNewMagicRound += NewCharEffects_OnNewMagicRound;
             }
         }
 
@@ -162,12 +154,13 @@ namespace ClimatesCalories
         static bool txtSeverity = true;
         static bool clothDmg = true;
         static bool encumbranceRPR = false;
-        public static bool tediousTravel = false;
+        static bool tediousTravel = false;
         static bool climatesCloaksOld = false;
         static bool fillingFoodOld = false;
         static bool restoreSaveRound = false;
         static bool firstModUse = false;
         static bool startRound = false;
+        static int absTempOld = 0;
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -185,6 +178,7 @@ namespace ClimatesCalories
             PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
             PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
             PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
+            playerEntity.OnExhausted += PassedOut_OnExhausted;
 
             GameManager.Instance.RegisterPreventRestCondition(() => { return TooExtremeToRest(); }, "The temperature is too extreme to rest.");
             UIWindowFactory.RegisterCustomUIWindow(UIWindowType.Tavern, typeof(TavernWindow));
@@ -227,6 +221,11 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
 
             EnemyDeath.OnEnemyDeath += Hunting.EnemyDeath_OnEnemyDeath;
+        }
+        
+        private static void PassedOut_OnExhausted(DaggerfallEntity entity)
+        {
+            Sleep.sleepyCounter -= 50;
         }
 
         private static void WaterSourceActivation(RaycastHit hit)
@@ -277,7 +276,6 @@ namespace ClimatesCalories
             if (tt != null)
             {
                 tediousTravel = true;
-                txtSeverity = false;
             }
             if (ff != null)
             {
@@ -287,7 +285,7 @@ namespace ClimatesCalories
             {
                 climatesCloaksOld = true;
             }
-            if (ff != null || cc != null)
+            if (tediousTravel || fillingFoodOld || climatesCloaksOld)
             {
                 EntityEffectBroker.OnNewMagicRound += ClimateIncomp_OnNewMagicRound;
             }
@@ -323,6 +321,7 @@ namespace ClimatesCalories
         static private int sleepTemp = 0;
         static public bool playerIsWading = false;
         static public bool isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
+        static public bool inPrison = playerEntity.InPrison;
 
         const float stdInterval = 0.5f;
         static private bool lookingUp = false;
@@ -337,13 +336,22 @@ namespace ClimatesCalories
 
         void Update()
         {
-            if (GameManager.Instance.PlayerMouseLook.Pitch <= -70 && !GameManager.Instance.PlayerMotor.IsSwimming && !GameManager.Instance.PlayerMotor.IsClimbing)
+            if (GameManager.Instance.PlayerMouseLook.Pitch <= -70 && !playerEnterExit.IsPlayerInside && !GameManager.Instance.PlayerMotor.IsSwimming && !GameManager.Instance.PlayerMotor.IsClimbing)
             {
                 lookingUp = true;
             }
 
+            if (playerEntity.InPrison)
+                inPrison = true;
+
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
                 return;
+
+            if (startRound)
+            {
+                startRound = false;
+                NewCharEffects();
+            }            
 
             currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
 
@@ -412,6 +420,7 @@ namespace ClimatesCalories
             if (tempInfoBox == null)
             {
                 tempInfoBox = new DaggerfallMessageBox(DaggerfallUI.UIManager);
+                ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", tempInfoBox);
                 tempInfoBox.AllowCancel = true;
                 tempInfoBox.ClickAnywhereToClose = true;
                 tempInfoBox.ParentPanel.BackgroundColor = Color.clear;
@@ -424,7 +433,6 @@ namespace ClimatesCalories
         private static void ClimatesCalories_OnStartGame(object sender, EventArgs e)
         {
             startRound = true;
-            EntityEffectBroker.OnNewMagicRound += NewCharEffects_OnNewMagicRound;
             DaggerfallUnityItem campEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 530);
             campEquip.currentCondition = 3;
             GameManager.Instance.PlayerEntity.Items.AddItem(campEquip);
@@ -432,6 +440,7 @@ namespace ClimatesCalories
             Hunger.hungry = false;
             playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
             Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+            Debug.Log("[Climates & Calories] OnStartGame");
         }
 
         public static bool TooExtremeToRest()
@@ -442,8 +451,9 @@ namespace ClimatesCalories
                 return false;
         }
 
-        private static void NewCharEffects_OnNewMagicRound()
+        private static void NewCharEffects()
         {
+            Debug.Log("[Climates & Calories] NewCharEffects");
             if (playerGPS.CurrentLocation.Name == "Privateer's Hold")
             {
                 wetCount = 100;
@@ -455,25 +465,23 @@ namespace ClimatesCalories
                 wetCount = 0;
                 DaggerfallUnityItem cloak;
                 DaggerfallUnityItem boots;
+                Races race = playerEntity.Race;
                 if (playerEntity.Gender == Genders.Male)
                 {
-                    cloak = ItemBuilder.CreateItem(ItemGroups.MensClothing, 155);
-                    boots = ItemBuilder.CreateItem(ItemGroups.MensClothing, 188);
+                    cloak = ItemBuilder.CreateMensClothing(MensClothing.Formal_cloak, race);
+                    boots = ItemBuilder.CreateMensClothing(MensClothing.Shoes, race);
                 }
                 else
                 {
-                    cloak = ItemBuilder.CreateItem(ItemGroups.MensClothing, 155);
-                    boots = ItemBuilder.CreateItem(ItemGroups.MensClothing, 188);
-                }
+                cloak = ItemBuilder.CreateWomensClothing(WomensClothing.Formal_cloak, race);
+                boots = ItemBuilder.CreateWomensClothing(WomensClothing.Shoes, race);
+            }
                 cloak.CurrentVariant = 1;
                 cloak.currentCondition /= 4;
                 boots.currentCondition /= 4;
                 GameManager.Instance.PlayerEntity.Items.AddItem(cloak);
                 GameManager.Instance.PlayerEntity.Items.AddItem(boots);
             }
-
-            startRound = false;
-            EntityEffectBroker.OnNewMagicRound -= NewCharEffects_OnNewMagicRound;
         }
 
         private static void ClimateIncomp_OnNewMagicRound()
@@ -488,6 +496,15 @@ namespace ClimatesCalories
                 DaggerfallUI.SetMidScreenText("Climates&Calories is not compatible with FillingFood.");
                 return;
             }
+            if (tediousTravel)
+            {
+                DaggerfallUI.SetMidScreenText("Tedious Travel is no longer supported.");
+                DaggerfallUI.SetMidScreenText("Please switch to the Travel Options mod.");
+                return;
+            }
+
+            if (!tediousTravel && !fillingFoodOld && !climatesCloaksOld)
+                EntityEffectBroker.OnNewMagicRound -= ClimateIncomp_OnNewMagicRound;
         }
 
         private static void ClimatesCaloriesEffects_OnNewMagicRound()
@@ -517,9 +534,12 @@ namespace ClimatesCalories
                     Sleep.SleepCheck();
                     debuffValue = (int)Hunger.starvDays * 2;
                     DebuffAtt(debuffValue);
+
+                    if (isVampire && playerEnterExit.IsPlayerInSunlight)
+                        playerEntity.IncreaseHealth(1);
                 }
                 //When fast traveling counters resets.
-                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || playerEntity.InPrison)
+                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || inPrison)
                 {
                     txtCount = txtIntervals;
                     wetCount = 0;
@@ -527,8 +547,11 @@ namespace ClimatesCalories
                     fastTravelTime++;
                     TavernWindow.drunk = 0;
                     Sleep.sleepyCounter = 0;
+                    Sleep.wakeOrSleepTime = currentTime;
+                    if (inPrison && GameManager.Instance.IsPlayerOnHUD)
+                        inPrison = false;
                 }
-                //Sleeping outside. Since there is no way currently to interrupt Rest, except with monsters, I keep track of temp during sleep and apply effects when waking up.
+                //Sleeping outside. I keep track of temp during sleep and apply effects when waking up.
                 else if (playerEntity.IsResting && !playerEntity.IsLoitering)
                 {
                     TavernWindow.Drunk();
@@ -568,7 +591,7 @@ namespace ClimatesCalories
                     Hunger.FoodRotCounter();
                     Hunger.FoodRotter();
                     Hunger.Starvation();
-                    Sleep.SleepCheck(); Debug.Log("[Climates & Calories] OnNewMagicRound SleepCheck() for normal");
+                    Sleep.SleepCheck();
 
                     playerIsWading = GameManager.Instance.PlayerMotor.OnExteriorWater == PlayerMotor.OnExteriorWaterMethod.Swimming;
                     int fatigueDmg = 0;
@@ -689,14 +712,6 @@ namespace ClimatesCalories
                     //To counter a bug where you have 0 Stamina with no averse effects.
                     if (playerEntity.CurrentFatigue <= 10)
                     {
-                        if (tediousTravel)
-                        {
-                            UserInterfaceWindow topWindow = (UserInterfaceWindow)DaggerfallUI.UIManager.TopWindow;
-                            if (topWindow.GetType().ToString() == "TediousTravel.TediousTravelControllMenu")
-                            {
-                                topWindow.CloseWindow();
-                            }
-                        }
                         playerEntity.DecreaseHealth(2);
                         if (!GameManager.IsGamePaused) { DaggerfallUI.AddHUDText("You are exhausted and need to rest..."); }
                     }
@@ -720,6 +735,15 @@ namespace ClimatesCalories
 
                     DebuffAtt(debuffValue);
                     Hunting.HuntingRound();
+                    ModManager.Instance.SendModMessage("TravelOptions", "isTravelActive", null, (string message, object data) =>
+                    {
+                        if ((bool)data && absTemp > absTempOld + 10)
+                        {
+                            ModManager.Instance.SendModMessage("TravelOptions", "showMessage", "The temperature shifted...");
+                        }
+                    });
+                    
+                    absTempOld = absTemp;
                 }
             }
         }
@@ -727,6 +751,7 @@ namespace ClimatesCalories
         static void DrinkWater()
         {
             List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
+            const string sipWater = "You take a sip from your waterskin.";
             foreach (DaggerfallUnityItem skin in skins)
             {
                 if (skin.weightInKg > 0.1)
@@ -734,12 +759,19 @@ namespace ClimatesCalories
                     skin.weightInKg -= 0.1f;
                     if (skin.weightInKg <= 0.1)
                     {
+                        ModManager.Instance.SendMessage("TravelOptions", "pauseTravel");
                         skin.shortName = "Empty Waterskin";
                         DaggerfallUI.AddHUDText("You drain your waterskin.");
                     }
                     else
                     {
-                        DaggerfallUI.AddHUDText("You take a sip from your waterskin.");
+                        ModManager.Instance.SendModMessage("TravelOptions", "isTravelActive", null, (string message, object data) =>
+                        {
+                            if ((bool)data)
+                                ModManager.Instance.SendModMessage("TravelOptions", "showMessage", sipWater);
+                            else
+                                DaggerfallUI.AddHUDText(sipWater);
+                        });
                     }
                     break;
                 }
@@ -865,17 +897,17 @@ namespace ClimatesCalories
                 }
             }
             if (Climates.cloak || aChest != null) { cTop = true; }
-            if (aLegs != null) { cBottom = true; }
-            if (!cTop || !cBottom)
+            if (Climates.cloak || aLegs != null) { cBottom = true; }
+            if ((!cTop || !cBottom))
             {
-                if (playerEnterExit.IsPlayerInSunlight && natTemp > 10)
+                if (playerEnterExit.IsPlayerInSunlight && natTemp > 10 && !GameManager.Instance.WeatherManager.IsOvercast)
                 {
                     SunBurnRace(natTemp, cTop, cBottom);
                 }
                 else if (natTemp < -10)
                 {
                     playerEntity.DecreaseHealth(1);
-                    if (txtCount >= txtIntervals)
+                    if (txtCount >= txtIntervals && !isVampire)
                     { DaggerfallUI.AddHUDText("The cold air numbs your bare skin."); }
                 }
             }
@@ -895,7 +927,9 @@ namespace ClimatesCalories
 
         private static void SunBurn(bool cTop, bool cBottom)
         {
-            playerEntity.DecreaseHealth(1);
+            if (playerEntity.CurrentHealth > 5)
+                playerEntity.DecreaseHealth(1);
+
             if (txtCount >= txtIntervals && cTop)
             {
                 DaggerfallUI.AddHUDText("The sun burns your bare skin.");
@@ -1009,9 +1043,10 @@ namespace ClimatesCalories
                 {
                     DaggerfallUI.AddHUDText("Your " + cloth.ItemName.ToString() + " is getting worn out...");
                 }
-                if (cloth.currentCondition == 0)
+                else if (cloth.currentCondition == 0)
                 {
                     ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
+                    DaggerfallUI.AddHUDText("Your " + cloth.ItemName.ToString() + " is ruined...");
                 }
             }
 
@@ -1159,7 +1194,7 @@ namespace ClimatesCalories
                 }
                 else if (totalTemp > 20 && !txtSeverity)
                 {
-                    if (playerEntity.RaceTemplate.ID == (int)Races.Khajiit) { tempText = "You heat is making you pant..."; }
+                    if (playerEntity.RaceTemplate.ID == (int)Races.Khajiit) { tempText = "The heat is making you pant..."; }
                     else if (playerEntity.RaceTemplate.ID == (int)Races.Argonian) { tempText = "You are absorbing too much heat..."; }
                     else tempText = "You wipe the sweat from your brow...";
                 }
@@ -1258,7 +1293,7 @@ namespace ClimatesCalories
             else if (wetCount > 20) { wetString = "You are somewhat wet."; }
             else if (wetCount > 10) { wetString = "You are a bit wet."; }
             DaggerfallUI.AddHUDText(wetString);
-            if (totalTemp < -10 && !GameManager.Instance.PlayerMotor.IsSwimming) { DaggerfallUI.AddHUDText("You should make camp and dry off."); }
+            if (totalTemp < -10 && !GameManager.Instance.PlayerMotor.IsSwimming && wetCount > 10) { DaggerfallUI.AddHUDText("You should make camp and dry off."); }
         }
     }    
 }

@@ -232,12 +232,43 @@ namespace ClimatesCalories
 
         private static void PlaceTentOnGround()
         {
-            RaycastHit hit;
-            Ray ray = new Ray(TentPosition, Vector3.down);
-            if (Physics.Raycast(ray, out hit, 1000))
+            if (!GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && !GameManager.Instance.PlayerEnterExit.IsPlayerInside)
             {
-                TentPosition = hit.point;
-                TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                RaycastHit hit;
+                Ray ray = new Ray(TentPosition, Vector3.down);
+                if (Physics.Raycast(ray, out hit, 1000))
+                {
+                    TentPosition = hit.point;
+                    TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                }
+                else
+                {
+                    Ray rayUp = new Ray(TentPosition + (Vector3.up * 500f), Vector3.down);
+                    if (Physics.Raycast(rayUp, out hit, 1000))
+                    {
+                        TentPosition = hit.point + (hit.transform.up * 1.1f);
+                        TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                        FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
+                    }
+                }
+            }
+        }
+
+        public static void OnNewMagicRound_PlaceCamp()
+        {
+            if (CampDeployed && !GameManager.Instance.PlayerEnterExit.IsPlayerInside)
+            {
+                int playerX = GameManager.Instance.PlayerGPS.CurrentMapPixel.X;
+                int playerY = GameManager.Instance.PlayerGPS.CurrentMapPixel.Y;
+                if (playerX == CampMapPixel.X && playerY == CampMapPixel.Y)
+                {
+                    Tent.SetActive(true);
+                    PlaceTentOnGround();
+                }
+                else
+                {
+                    Tent.SetActive(false);
+                }
             }
         }
 
@@ -246,9 +277,16 @@ namespace ClimatesCalories
             Vector3 position = FirePosition;
             GameObject go = GameObjectHelper.InstantiatePrefab(dfUnity.Option_DungeonLightPrefab.gameObject, string.Empty, parent, position);
             Light light = go.GetComponent<Light>();
+            Color32 fireColor = new Color32(255, 147, 41, 255);
             if (light != null)
             {
-                light.range = 15;
+                light.color = fireColor;
+                light.intensity = 1;
+                light.range = 20;
+                light.type = LightType.Point;
+                light.shadows = LightShadows.Hard;
+                light.shadowStrength = 1f;
+                light.spotAngle = 140;
             }
 
             return go;
@@ -263,8 +301,5 @@ namespace ClimatesCalories
             c.AudioSource.volume = 0.7f;
             c.SetSound(SoundClips.Burning, AudioPresets.LoopIfPlayerNear);
         }
-
-
-
     }
 }

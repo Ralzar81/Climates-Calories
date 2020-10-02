@@ -5,9 +5,7 @@
 
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Entity;
-using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop;
-using System.Collections.Generic;
 using UnityEngine;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 
@@ -30,13 +28,16 @@ namespace ClimatesCalories
 
         static public void SleepCheck(int sleepTemp = 0)
         {
+            if (sleepyCounter < 0)
+                sleepyCounter = 0;
+            //Debug.Log("[Climates & Calories] sleepyCounter = " + sleepyCounter.ToString());
             currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             if (ClimateCalories.isVampire)
             {
                 sleepyCounter = 0;
                 return;
             }
-            if (playerEntity.IsResting && (playerEnterExit.IsPlayerInsideBuilding || ClimateCalories.camping))
+            if (playerEntity.IsResting && !playerEntity.IsLoitering && (playerEnterExit.IsPlayerInsideBuilding || ClimateCalories.camping))
             {
                 Sleeping(sleepTemp);
             }
@@ -50,10 +51,6 @@ namespace ClimatesCalories
 
         static private void NotResting()
         {
-            Debug.Log("[Climates & Calories] NotResting() Start sleepyCounter = " + sleepyCounter.ToString());
-            Debug.Log("[Climates & Calories] NotResting() Start sleepy = " + sleepy.ToString());
-            Debug.Log("[Climates & Calories] NotResting() Start exhausted = " + exhausted.ToString());
-            Debug.Log("[Climates & Calories] NotResting() Start awakeOrAsleepHours = " + awakeOrAsleepHours.ToString());
             if (!awake)
             {
                 awake = true;
@@ -61,11 +58,11 @@ namespace ClimatesCalories
                 if (sleepyCounter > 0)
                     DaggerfallUI.AddHUDText("You need more rest...");
             }
-
+           // Debug.Log("[Climates & Calories] NotResting()");
             gameMinutes = currentTime;
             awakeOrAsleepHours = (gameMinutes - wakeOrSleepTime) / 60;
             sleepyCounter += Mathf.Max((int)(awakeOrAsleepHours - 6) / 6, 0);
-
+            //Debug.Log("[Climates & Calories] awakeOrAsleepHours = " + awakeOrAsleepHours.ToString());
             if (sleepyCounter > 0 && !sleepy)
             {
                 sleepy = true;
@@ -83,37 +80,40 @@ namespace ClimatesCalories
 
             if (sleepyCounter > 0)
             {
-                int fatigueDmg = sleepyCounter / 10;
-                playerEntity.DecreaseFatigue(sleepyCounter);
+                int fatigueDmg = sleepyCounter / 20;
+                playerEntity.DecreaseFatigue(fatigueDmg);
+                //Debug.Log("[Climates & Calories] fatigueDmg = " + fatigueDmg.ToString());
             }
             else
             {
                 sleepy = false;
                 exhausted = false;
             }
-            Debug.Log("[Climates & Calories] NotResting() End sleepyCounter = " + sleepyCounter.ToString());
-            Debug.Log("[Climates & Calories] NotResting() End sleepy = " + sleepy.ToString());
-            Debug.Log("[Climates & Calories] NotResting() End exhausted = " + exhausted.ToString());
         }
 
         static private void Sleeping(int sleepTemp = 0)
         {
-            Debug.Log("[Climates & Calories] Sleeping() Start sleepyCounter = " + sleepyCounter.ToString());
-            Debug.Log("[Climates & Calories] Sleeping() Start sleepy = " + sleepy.ToString());
-            Debug.Log("[Climates & Calories] Sleeping() Start exhausted = " + exhausted.ToString());
             if (awake)
             {
                 awake = false;
                 wakeOrSleepTime = currentTime;
+                sleepyCounter -= 5;
             }
-
+            //Debug.Log("[Climates & Calories] Sleeping()");
             gameMinutes = currentTime;
             awakeOrAsleepHours = (gameMinutes - wakeOrSleepTime) / 60;
+            //Debug.Log("[Climates & Calories] awakeOrAsleepHours = " + awakeOrAsleepHours.ToString());
+            if (sleepyCounter > 200)
+                sleepyCounter -= 100;
+            else if (sleepyCounter > 50)
+                sleepyCounter -= 10;
 
             if (awakeOrAsleepHours >= 1)
             {
-                wakeOrSleepTime = currentTime + (uint)sleepTemp;
-                sleepyCounter--;
+                wakeOrSleepTime = currentTime - (uint)sleepTemp;
+                sleepyCounter -= 5;
+                if (playerEnterExit.IsPlayerInsideBuilding || ClimateCalories.camping)
+                    sleepyCounter--;
             }
         }
     }

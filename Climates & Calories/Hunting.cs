@@ -13,10 +13,10 @@ using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Utility;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using DaggerfallWorkshop.Game.UserInterface;
 using System.Collections.Generic;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using System;
+using DaggerfallWorkshop.Game.Utility;
 
 namespace ClimatesCalories
 {
@@ -54,6 +54,12 @@ namespace ClimatesCalories
                             int meatAmount = GetMeatAmount(enemyEntity.MobileEnemy.ID);
                             for (int i = 0; i < meatAmount; i++)
                             {
+                                DaggerfallUnityItem meat = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex);
+                                if (enemyEntity.MobileEnemy.ID != (int)MobileTypes.GrizzlyBear || enemyEntity.MobileEnemy.ID != (int)MobileTypes.SabertoothTiger)
+                                {
+                                    AbstractItemFood food = meat as AbstractItemFood;
+                                    food.RotFood();
+                                }
                                 entityBehaviour.CorpseLootContainer.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex));
                             }
                         }
@@ -80,19 +86,20 @@ namespace ClimatesCalories
         private static int GetMeatAmount(int enemyID)
         {
             int meatAmount = 0;
+            int luck = Mathf.Max(1, luckMod - 5);
             switch (enemyID)
             {
                 case (int)MobileTypes.GrizzlyBear:
-                    meatAmount = UnityEngine.Random.Range(3, 4 + luckMod);
+                    meatAmount = UnityEngine.Random.Range(2, (4 + luck));
                     break;
                 case (int)MobileTypes.SabertoothTiger:
-                    meatAmount = UnityEngine.Random.Range(2, 3 + luckMod);
+                    meatAmount = UnityEngine.Random.Range(2, (3 + luck));
                     break;
                 case (int)MobileTypes.GiantScorpion:
-                    meatAmount = UnityEngine.Random.Range(1, 2 + luckMod);
+                    meatAmount = UnityEngine.Random.Range(1, (2 + luck));
                     break;
                 case (int)MobileTypes.Spider:
-                    meatAmount = UnityEngine.Random.Range(1, 1 + luckMod);
+                    meatAmount = UnityEngine.Random.Range(1, (1 + luck));
                     break;
                 case (int)MobileTypes.Rat:
                     meatAmount = 1;
@@ -211,7 +218,8 @@ namespace ClimatesCalories
         //Uses OnNewMagicRound to check for animals to hunt.
         public static void HuntingRound()
         {
-            if (!DaggerfallUnity.Instance.WorldTime.Now.IsNight &&
+            if (!GameManager.Instance.AreEnemiesNearby() &&
+                !DaggerfallUnity.Instance.WorldTime.Now.IsNight &&
                 !GameManager.IsGamePaused &&
                 !GameManager.Instance.PlayerGPS.IsPlayerInLocationRect &&
                 !GameManager.Instance.PlayerEnterExit.IsPlayerInside &&
@@ -227,17 +235,36 @@ namespace ClimatesCalories
                 else
                     roll = UnityEngine.Random.Range(1, 200) - luckMod;
 
-                if (roll < 2)
+                bool roadFollow = false;
+                bool pathFollow = false;
+                ModManager.Instance.SendModMessage("TravelOptions", "isFollowingRoad", null, (string message, object data) =>
                 {
-                    if (ClimateCalories.tediousTravel)
+                    roadFollow = (bool)data;
+                });
+
+                ModManager.Instance.SendModMessage("TravelOptions", "isPathFollowing", null, (string message, object data) =>
+                {
+                    pathFollow = (bool)data;
+                });
+
+                if (roll < 1)
+                {
+                    if (pathFollow)
                     {
-                        UserInterfaceWindow topWindow = (UserInterfaceWindow)DaggerfallUI.UIManager.TopWindow;
-                        if (topWindow.GetType().ToString() == "TediousTravel.TediousTravelControllMenu")
+                        if (Dice100.SuccessRoll(50))
                         {
-                            topWindow.CloseWindow();
+                            HuntCheck();
                         }
                     }
-                    HuntCheck();
+                    else if (roadFollow)
+                    {
+                        if (Dice100.SuccessRoll(20))
+                        {
+                            HuntCheck();
+                        }
+                    }
+                    else
+                        HuntCheck();
                 }
             }
             else if (huntingTimer > 0)
@@ -285,6 +312,7 @@ namespace ClimatesCalories
         {
             int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", huntingPopUp);
             if (roll > 7 && Climates.gotDrink)
             {
                 string[] message = {
@@ -321,6 +349,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -446,6 +475,7 @@ namespace ClimatesCalories
         {
             int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", huntingPopUp);
             if (roll > 7 && Climates.gotDrink)
             {
                 string[] message = {
@@ -480,6 +510,8 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -545,6 +577,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -615,6 +648,7 @@ namespace ClimatesCalories
         {
             int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", huntingPopUp);
             if (roll > 7)
             {
                 string[] message = {
@@ -644,6 +678,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -718,6 +753,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -797,6 +833,7 @@ namespace ClimatesCalories
         {
             int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", huntingPopUp);
             if (roll > 7)
             {
                 string birds = "You spot a flock of birds settling down in the tall grass.";
@@ -832,6 +869,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -931,6 +969,7 @@ namespace ClimatesCalories
         {
             int roll = UnityEngine.Random.Range(1, 11);
             DaggerfallMessageBox huntingPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+            ModManager.Instance.SendModMessage("TravelOptions", "noStopForUIWindow", huntingPopUp);
             if (roll > 7)
             {
                 string[] message = {
@@ -960,6 +999,7 @@ namespace ClimatesCalories
         {
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                 sender.CloseWindow();
                 MovePlayer();
                 TimeSkip();
@@ -1054,11 +1094,12 @@ namespace ClimatesCalories
 
 
         private static void GiveMeat(int meatAmount)
-        {
+        {            
             for (int i = 0; i < meatAmount; i++)
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex));
             }
+            ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
             DaggerfallUI.AddHUDText("You gain " + meatAmount.ToString() + " pieces of Meat.");
         }
 
@@ -1068,6 +1109,7 @@ namespace ClimatesCalories
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemOrange.templateIndex));
             }
+            ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
             DaggerfallUI.AddHUDText("You gain " + fruitAmount.ToString() + " Oranges.");
         }
 
@@ -1077,6 +1119,7 @@ namespace ClimatesCalories
             {
                 GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemApple.templateIndex));
             }
+            ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
             DaggerfallUI.AddHUDText("You gain "+fruitAmount.ToString()+" Apples.");
         }
 
@@ -1096,15 +1139,16 @@ namespace ClimatesCalories
 
         private static void TimeSkip(bool hunting = true)
         {
+            PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             huntingTime = true;
             int skipAmount;
             if (hunting)
-                skipAmount = Mathf.Max(UnityEngine.Random.Range(20, 120) - (GameManager.Instance.PlayerEntity.Stats.LiveSpeed / 10), 5);
+                skipAmount = Mathf.Max(UnityEngine.Random.Range(20, 120) - (playerEntity.Stats.LiveSpeed / 10), 5);
             else
                 skipAmount = UnityEngine.Random.Range(10, 30);
 
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
-            GameManager.Instance.PlayerEntity.DecreaseFatigue(skipAmount, true);
+            playerEntity.DecreaseFatigue(playerEntity.CurrentFatigue / (skipAmount/ 10), true);
             huntingTime = false;
         }
 

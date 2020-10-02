@@ -223,16 +223,14 @@ namespace ClimatesCalories
                 else if (isSnowing)
                 {
                     temp -= 10;
-                    if (cloak && hood)
+                    if (cloak)
                     {
                         wetWeather = 0;
                     }
-                    else if (cloak && hood)
+                    else
                     {
                         wetWeather = 1;
                     }
-                    else
-                    { wetWeather = 2; }
                 }
                 else if (isOvercast)
                 {
@@ -754,7 +752,7 @@ namespace ClimatesCalories
                         break;
                 }
             }
-            else if (chestCloth != null)
+            if (chestCloth != null && !up)
             {
                 switch (chestCloth.TemplateIndex)
                 {
@@ -763,7 +761,7 @@ namespace ClimatesCalories
                         switch (chestCloth.CurrentVariant)
                         {
                             case 0:
-                                up = true;
+                                up = false;
                                 break;
                             case 1:
                                 up = true;

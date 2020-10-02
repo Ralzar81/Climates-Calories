@@ -6,7 +6,6 @@
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
-using DaggerfallWorkshop.Game.MagicAndEffects;
 using UnityEngine;
 using System.Collections.Generic;
 using DaggerfallWorkshop;
@@ -64,7 +63,7 @@ namespace ClimatesCalories
                     }
                     messages.Add(string.Empty);
                 }
-                if (ClimateCalories.isVampire)
+                if (!ClimateCalories.isVampire)
                 {
                     messages.Add(TxtFood());
                     messages.Add(string.Empty);
@@ -72,7 +71,19 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                    messages.Add("You have no need of food or sleep.");
+                    messages.Add("You have no need for food or sleep.");
+                }
+                if (TavernWindow.drunk > playerEntity.Stats.LiveEndurance / 2)
+                {
+                    messages.Add(string.Empty);
+                    if (TavernWindow.drunk > playerEntity.Stats.LiveEndurance - 10)
+                    {
+                        messages.Add("You are very drunk.");
+                    }
+                    else
+                    {
+                        messages.Add("You are drunk.");
+                    }
                 }
                 
                 newBox.SetText(messages.ToArray());
@@ -99,7 +110,6 @@ namespace ClimatesCalories
             starving = Hunger.starving;
             rations = Hunger.RationsToEat();
             sleepyCounter = Sleep.sleepyCounter;
-            awakeOrAsleepHours = (int)Sleep.awakeOrAsleepHours;
         }
 
         public static string TxtClimate()
@@ -414,9 +424,9 @@ namespace ClimatesCalories
                 {
                     adviceTxt = "A cloak would protect you from getting wet.";
                 }
-                else if ((isRaining || isStorming) && !hood && !isDungeon)
+                else if ((isRaining || isStorming || isSnowing) && !hood && !isDungeon)
                 {
-                    adviceTxt = "The rain is soaking your head and running down your neck.";
+                    adviceTxt = "Your head and neck is getting soaked.";
                 }
                 else if (wetCount > 19)
                 {
@@ -565,6 +575,10 @@ namespace ClimatesCalories
             {
                 foodString = "You are not hungry.";
             }
+            else if (rations)
+            {
+                foodString = "Your rations keep you from starving.";
+            }
             
             return foodString;
         }
@@ -575,8 +589,10 @@ namespace ClimatesCalories
                 return "You are exhausted from lack of sleep.";
             else if (sleepyCounter > 100)
                 return "You are drowsy from lack of sleep.";
-            else if (sleepyCounter > 0)
+            else if (sleepyCounter > 50)
                 return "You are tired from lack of sleep.";
+            else if (sleepyCounter > 0)
+                return "You are a bit sleepy.";
 
             return "You are well rested.";
         }
