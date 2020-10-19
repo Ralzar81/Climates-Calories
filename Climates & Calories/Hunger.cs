@@ -45,7 +45,10 @@ namespace ClimatesCalories
         static public void Starvation()
         {
             gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            ateTime = GameManager.Instance.PlayerEntity.LastTimePlayerAteOrDrankAtTavern;
+            if (playerEntity.IsInBeastForm)
+                ateTime = gameMinutes;
+            else
+                ateTime = GameManager.Instance.PlayerEntity.LastTimePlayerAteOrDrankAtTavern;
             hunger = gameMinutes - ateTime;
             starvDays = (hunger / 1440);
             starvCounter += (int)starvDays;
@@ -86,7 +89,7 @@ namespace ClimatesCalories
             {
                 if (sack.weightInKg > 0.1)
                 {
-                    sack.weightInKg -= 0.1f;
+                    sack.weightInKg -= 1.0f;
                     playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 250;
                     if (!GameManager.IsGamePaused)
                     {

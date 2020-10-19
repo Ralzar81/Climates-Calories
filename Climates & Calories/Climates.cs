@@ -259,8 +259,8 @@ namespace ClimatesCalories
             {
                 if (playerEntity.IsInBeastForm)
                 {
-                    resFrost += 40;
-                    resFire += 30;
+                    resFrost += 100;
+                    resFire += 80;
                 }
                 else
                 {

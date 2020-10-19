@@ -19,6 +19,7 @@ namespace ClimatesCalories
     {
         public static DFPosition CampMapPixel = null;
         public static bool CampDeployed = false;
+        public static bool DungeonTent = false;
         public static Vector3 TentPosition;
         public static Quaternion TentRotation;
         public static GameObject Tent = null;
@@ -27,7 +28,6 @@ namespace ClimatesCalories
         public static Vector3 FirePosition;
         public static bool FireLit = false;
         public static int CampDmg;
-
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
 
@@ -55,6 +55,7 @@ namespace ClimatesCalories
                 else
                 {
                     DaggerfallUI.MessageBox("Your camping equipment broke.");
+                    collection.RemoveItem(item);
                     return false;
                 }
             }
@@ -92,6 +93,7 @@ namespace ClimatesCalories
                 FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
                 Tent.SetActive(true);
             }
+
             Fire.transform.SetPositionAndRotation(FirePosition, TentRotation);
             Fire.SetActive(true);
             AddTorchAudioSource(Fire);
@@ -190,7 +192,6 @@ namespace ClimatesCalories
                 FireLit = false;
                 TentMatrix = new Matrix4x4();
                 sender.CloseWindow();
-                DaggerfallUI.MessageBox("You pack up your camp.");
             }
         }
 
@@ -235,39 +236,62 @@ namespace ClimatesCalories
             if (!GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && !GameManager.Instance.PlayerEnterExit.IsPlayerInside)
             {
                 RaycastHit hit;
-                Ray ray = new Ray(TentPosition, Vector3.down);
-                if (Physics.Raycast(ray, out hit, 1000))
+                Ray rayDown = new Ray(TentPosition, Vector3.down);
+                if (Physics.Raycast(rayDown, out hit, 1000))
                 {
                     TentPosition = hit.point;
-                    TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                 }
                 else
                 {
-                    Ray rayUp = new Ray(TentPosition + (Vector3.up * 500f), Vector3.down);
-                    if (Physics.Raycast(rayUp, out hit, 1000))
+                    GameObject player = GameObject.FindGameObjectWithTag("Player");
+                    Vector3 newTentPos = TentPosition;
+                    newTentPos.y = player.transform.position.y;
+                    Ray rayFromPlayer = new Ray(newTentPos + Vector3.up, Vector3.down);
+                    if (Physics.Raycast(rayFromPlayer, out hit, 1000))
                     {
-                        TentPosition = hit.point + (hit.transform.up * 1.1f);
-                        TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                        FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
+                        TentPosition = hit.point;
+                        //FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
                     }
-                }
+                    else
+                    {
+                        Ray rayUp = new Ray(newTentPos + (Vector3.up * 500f), Vector3.down);
+                        if (Physics.Raycast(rayUp, out hit, 1000))
+                        {
+                            TentPosition = hit.point;
+                            //FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
+                        }
+                    }
+                }                
+                TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
             }
         }
 
         public static void OnNewMagicRound_PlaceCamp()
         {
-            if (CampDeployed && !GameManager.Instance.PlayerEnterExit.IsPlayerInside)
+            if (CampDeployed && Tent != null && !GameManager.Instance.PlayerEnterExit.IsPlayerInside)
             {
-                int playerX = GameManager.Instance.PlayerGPS.CurrentMapPixel.X;
-                int playerY = GameManager.Instance.PlayerGPS.CurrentMapPixel.Y;
-                if (playerX == CampMapPixel.X && playerY == CampMapPixel.Y)
+                //GameObject player = GameObject.FindGameObjectWithTag("Player");
+                //float distance = Vector3.Distance(player.transform.position, Tent.transform.position);
+                DFPosition player = GameManager.Instance.PlayerGPS.CurrentMapPixel;
+                int campX = CampMapPixel.X;
+                int campY = CampMapPixel.Y;
+                bool sameMapPixel = true;
+                if (campX != player.X || campY != player.Y)
+                    sameMapPixel = false;
+                Debug.Log("[Climates & Calories] OnNewMagicRound_PlaceCamp CampMapPixel = " + Camping.CampMapPixel.ToString());
+                Debug.Log("[Climates & Calories] OnNewMagicRound_PlaceCamp player = " + player.ToString());
+                Debug.Log("[Climates & Calories] sameMapPixel = " + sameMapPixel.ToString());
+                Debug.Log("[Climates & Calories] Tent active = " + Tent.activeSelf.ToString());
+                if (!sameMapPixel)
                 {
-                    Tent.SetActive(true);
-                    PlaceTentOnGround();
+                    Tent.SetActive(false);
+                    Fire.SetActive(false);
                 }
                 else
                 {
-                    Tent.SetActive(false);
+                    Tent.SetActive(true);
+                    Fire.SetActive(true);
+                    PlaceTentOnGround();
                 }
             }
         }

@@ -198,9 +198,11 @@ namespace ClimatesCalories
             }
             else
             {
-                int cost = FormulaHelper.CalculateRoomCost(daysToRent);
+                int quality = Mathf.Max((buildingData.quality / 2) - 3, 3);
+                int cost = FormulaHelper.CalculateRoomCost(daysToRent) * quality;
+                
                 tradePrice = FormulaHelper.CalculateTradePrice(cost, buildingData.quality, false);
-
+                
                 DaggerfallMessageBox messageBox = new DaggerfallMessageBox(uiManager, this);
                 TextFile.Token[] tokens = DaggerfallUnity.Instance.TextProvider.GetRandomTokens(offerPriceId);
                 messageBox.SetTextTokens(tokens, this);
@@ -332,15 +334,26 @@ namespace ClimatesCalories
 
         public static int drunk = 0;
         private static int drunkCounter = 0;
+        private static bool breakfast = false;
 
         protected void DoFood()
         {
             CloseWindow();
+            breakfast = false;
             int hour = DaggerfallUnity.Instance.WorldTime.Now.Hour;
-            if ((hour >= DaggerfallDateTime.MidnightHour) && (hour < DaggerfallDateTime.DawnHour))
+            if ((hour >= 5) && (hour < DaggerfallDateTime.DawnHour))
+            {
+                DaggerfallUI.MessageBox("Sorry, breakfast starts at dawn.");
+                return;
+            }
+            else if ((hour >= DaggerfallDateTime.MidnightHour) && (hour < DaggerfallDateTime.DawnHour))
             {
                 DaggerfallUI.MessageBox("Sorry, the kitchen is closed for the night.");
                 return;
+            }
+            else if ((hour >= DaggerfallDateTime.DawnHour) && (hour <= DaggerfallDateTime.MidMorningHour))
+            {
+                breakfast = true;
             }
 
             int tavernQuality = playerEnterExit.Interior.BuildingData.Quality;
@@ -350,11 +363,18 @@ namespace ClimatesCalories
             DaggerfallListPickerWindow foodAndDrinkPicker = new DaggerfallListPickerWindow(uiManager, this);
             foodAndDrinkPicker.OnItemPicked += Food_OnItemPicked;
 
-            string menu = regionMenu();
+            string menu;
+            if (breakfast)
+                menu = "breakfast";
+            else
+                menu = regionMenuDay();
+
             string[] tavernMenu;
             if (tavernQuality < 5)
             {
-                if (menu == "s")
+                if (menu == "breakfast")
+                    tavernMenu = breakLow;
+                else if (menu == "s")
                     tavernMenu = sLow;
                 else if (menu == "se")
                     tavernMenu = seLow;
@@ -369,7 +389,9 @@ namespace ClimatesCalories
             }
             else if (tavernQuality < 13)
             {
-                if (menu == "s")
+                if (menu == "breakfast")
+                    tavernMenu = breakMid;
+                else if (menu == "s")
                     tavernMenu = sMid;
                 else if (menu == "se")
                     tavernMenu = seMid;
@@ -384,7 +406,9 @@ namespace ClimatesCalories
             }
             else
             {
-                if (menu == "s")
+                if (menu == "breakfast")
+                    tavernMenu = breakHigh;
+                else if (menu == "s")
                     tavernMenu = sHigh;
                 else if (menu == "se")
                     tavernMenu = seHigh;
@@ -410,7 +434,7 @@ namespace ClimatesCalories
 
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
             CloseWindow();
-            string menu = regionMenu();
+            string menu = regionMenuDay();
             int price;
 
             if (tavernQuality < 5)
@@ -459,6 +483,8 @@ namespace ClimatesCalories
                     price = nHighPrices[index];
             }
 
+            if (breakfast)
+                price -= 5;
 
             uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             uint cal;
@@ -502,126 +528,142 @@ namespace ClimatesCalories
 
         byte[] calories = { 80, 120, 150, 200, 240 };
 
+        static readonly string[] breakLow =  {
+            "1 gold          Leftovers"
+        };
 
         static readonly string[] nLow =  {
-            " 8 gold          Baked Apples",
-            "10 gold          Mystery Sausage",
-            "13 gold          Grilled Hare"
+            " 6 gold          Baked Apples",
+            " 8 gold          Mystery Sausage",
+            "10 gold          Grilled Hare"
         };
-        byte[] nLowPrices = { 8, 10, 13 };
+        byte[] nLowPrices = { 6, 8, 10 };
+
+
+        static readonly string[] breakMid =  {
+            "2 gold          Gruel",
+            "5 gold          Bread and Cheese"
+        };
 
         static readonly string[] nMid =  {
-            "10 gold          Breton Pork Sausage",
-            "12 gold          Cheese Pork Schnitzel",
-            "15 gold          Hare in Garlic Sauce",
-            "20 gold          Highland Rabbit Stew"
+            " 7 gold          Breton Pork Sausage",
+            "10 gold          Cheese Pork Schnitzel",
+            "12 gold          Hare in Garlic Sauce",
+            "15 gold          Highland Rabbit Stew"
         };
-        byte[] nMidPrices = { 10, 12, 15, 20 };
+        byte[] nMidPrices = { 7, 10, 12, 15 };
+
+
+        static readonly string[] breakHigh =  {
+            " 5 gold          Oatmeal with Berries",
+            " 8 gold          Artisinal Pastries",
+            "10 gold          Royal Breakfast Plate"
+        };
 
         static readonly string[] nHigh =  {
-            "12 gold          Gorapple Cheesecake",
-            "18 gold          Apple Cobbler Supreme",
-            "20 gold          Peacock Pie",
-            "25 gold          Rabbit Gnocchi Ragu",
-            "30 gold          Salmon Steak Supreme"
+            "10 gold          Gorapple Cheesecake",
+            "13 gold          Apple Cobbler Supreme",
+            "15 gold          Peacock Pie",
+            "18 gold          Rabbit Gnocchi Ragu",
+            "22 gold          Salmon Steak Supreme"
         };
-        byte[] nHighPrices = { 12, 18, 20, 25, 30 };
+        byte[] nHighPrices = { 10, 13, 15, 18, 22 };
 
 
 
         static readonly string[] neLow =  {
-            " 8 gold          Velothis Cabbage Soup",
-            "10 gold          Beetle-Cheese Poutine",
-            "13 gold          Eidar Radish Salad"
+            " 6 gold          Velothis Cabbage Soup",
+            " 8 gold          Beetle-Cheese Poutine",
+            "10 gold          Eidar Radish Salad"
         };
-        byte[] neLowPrices = { 8, 10, 13 };
+        byte[] neLowPrices = { 6, 8, 10 };
 
         static readonly string[] neMid =  {
-            "10 gold          Cabbage Biscuits",
-            "12 gold          Potato Porridge",
-            "15 gold          Dunmeri Jerked Horse Haunch",
-            "20 gold          Solstheim Elk and Scuttle"
+            " 7 gold          Cabbage Biscuits",
+            "10 gold          Potato Porridge",
+            "12 gold          Dunmeri Jerked Horse Haunch",
+            "15 gold          Solstheim Elk and Scuttle"
         };
-        byte[] neMidPrices = { 10, 12, 15, 20 };
+        byte[] neMidPrices = { 7, 10, 12, 15 };
 
         static readonly string[] neHigh =  {
-            "12 gold          Indoril Radish Tartlets",
-            "18 gold          Vvardenfell Ash Yam Loaf",
-            "20 gold          Kwama Egg Quiche",
-            "25 gold          Millet-Stuffed Pork Loin",
-            "30 gold          Akaviri Pork Fried Rice"
+            "10 gold          Indoril Radish Tartlets",
+            "13 gold          Vvardenfell Ash Yam Loaf",
+            "15 gold          Kwama Egg Quiche",
+            "18 gold          Millet-Stuffed Pork Loin",
+            "22 gold          Akaviri Pork Fried Rice"
         };
-        byte[] neHighPrices = { 12, 18, 20, 25, 30 };
+        byte[] neHighPrices = { 10, 13, 15, 18, 22 };
 
 
         static readonly string[] sLow =  {
-            " 8 gold          Cantaloupe Bread",
-            "10 gold          Fishy Stick",
-            "13 gold          Roasted Corn"
+            " 6 gold          Cantaloupe Bread",
+            " 8 gold          Fishy Stick",
+            "10 gold          Roasted Corn"
         };
-        byte[] sLowPrices = { 8, 10, 13 };
+        byte[] sLowPrices = { 6, 8, 10 };
 
         static readonly string[] sMid =  {
-            "10 gold          Beets With Goat Cheese",
-            "12 gold          Venison Pie",
-            "15 gold          Antelope Stew",
-            "20 gold          Parmesan Eels in Watermelon"
+            " 7 gold          Beets With Goat Cheese",
+            "10 gold          Venison Pie",
+            "12 gold          Antelope Stew",
+            "15 gold          Parmesan Eels in Watermelon"
         };
-        byte[] sMidPrices = { 10, 12, 15, 20 };
+        byte[] sMidPrices = { 7, 10, 12, 15 };
 
         static readonly string[] sHigh =  {
-            "12 gold          Roast Anteloupe",
-            "18 gold          Melon-Chevre Salad",
-            "20 gold          Pork Fried Rice",
-            "25 gold          Chili Cheese Corn",
-            "30 gold          Supreme Jambalaya"
+            "10 gold          Roast Anteloupe",
+            "13 gold          Melon-Chevre Salad",
+            "15 gold          Pork Fried Rice",
+            "18 gold          Chili Cheese Corn",
+            "22 gold          Supreme Jambalaya"
         };
-        byte[] sHighPrices = { 12, 18, 20, 25, 30 };
+        byte[] sHighPrices = { 10, 13, 15, 18, 22 };
 
 
 
         static readonly string[] seLow =  {
-            " 8 gold          Banana Surprise",
-            "10 gold          Green Bananas With Garlic",
-            "13 gold          Banana Cornbread"
+            " 6 gold          Banana Surprise",
+            " 8 gold          Green Bananas With Garlic",
+            "10 gold          Banana Cornbread"
         };
-        byte[] seLowPrices = { 8, 10, 13 };
+        byte[] seLowPrices = { 6, 8, 10 };
 
         static readonly string[] seMid =  {
-            "10 gold          Banana Millet Muffin",
-            "12 gold          Baked Sole With Bananas",
-            "15 gold          Chicken-and-Coconut Fried Rice",
-            "20 gold          Mistral Banana-Bunny Hash"
+            " 7 gold          Banana Millet Muffin",
+            "10 gold          Baked Sole With Bananas",
+            "12 gold          Chicken-and-Coconut Fried Rice",
+            "15 gold          Mistral Banana-Bunny Hash"
         };
-        byte[] seMidPrices = { 10, 12, 15, 20 };
+        byte[] seMidPrices = { 7, 10, 12, 15 };
 
         static readonly string[] seHigh =  {
-            "12 gold          Clan Mother's Banana Pilaf",
-            "18 gold          Stuffed Banana Leaves",
-            "20 gold          Jungle Snake Curry",
-            "25 gold          Banana-Radish Vichyssoise",
-            "30 gold          Spicy Grilled Lizard"
+            "10 gold          Clan Mother's Banana Pilaf",
+            "13 gold          Stuffed Banana Leaves",
+            "15 gold          Jungle Snake Curry",
+            "18 gold          Banana-Radish Vichyssoise",
+            "22 gold          Spicy Grilled Lizard"
         };
-        byte[] seHighPrices = { 12, 18, 20, 25, 30 };
+        byte[] seHighPrices = { 10, 13, 15, 18, 22 };
 
 
         static readonly string[] balHigh =  {
-            "12 gold          Summerset Rainbow Pie",
-            "18 gold          Old Aldmeri Gruel",
-            "20 gold          Pickled Fish Bowl",
-            "25 gold          Direnni Rabbit Bisque",
-            "30 gold          Lillandril Summer Sausage"
+            "10 gold          Summerset Rainbow Pie",
+            "13 gold          Old Aldmeri Gruel",
+            "25 gold          Pickled Fish Bowl",
+            "18 gold          Direnni Rabbit Bisque",
+            "22 gold          Lillandril Summer Sausage"
         };
-        byte[] balHighPrices = { 12, 18, 20, 25, 30 };
+        byte[] balHighPrices = { 10, 13, 25, 18, 22 };
 
 
         static readonly string[] woMid =  {
-            "10 gold          Potato Porridge",
-            "12 gold          Orcish Bratwurst On Bun",
-            "15 gold          Jerall Carrot Cake",
-            "20 gold          Bruma Jugged Rabbit"
+            " 7 gold          Potato Porridge",
+            "10 gold          Orcish Bratwurst On Bun",
+            "12 gold          Jerall Carrot Cake",
+            "15 gold          Bruma Jugged Rabbit"
         };
-        byte[] woMidPrices = { 10, 12, 15, 20 };
+        byte[] woMidPrices = { 7, 10, 12, 15 };
 
 
 
@@ -646,7 +688,7 @@ namespace ClimatesCalories
                 DaggerfallListPickerWindow foodAndDrinkPicker = new DaggerfallListPickerWindow(uiManager, this);
                 foodAndDrinkPicker.OnItemPicked += Drinks_OnItemPicked;
 
-                string menu = regionMenu();
+                string menu = regionMenuDay();
                 string[] tavernMenu;
                 if (tavernQuality < 5)
                 {
@@ -749,7 +791,7 @@ namespace ClimatesCalories
         static void TavernDrink(int alcohol)
         {
             DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
-            PassTime(600);
+            PassTime(900);
             DaggerfallUI.Instance.FadeBehaviour.FadeHUDFromBlack();
             drunk += alcohol;
             Debug.Log("[Climates & Calories]  drunk = " + drunk.ToString());
@@ -901,7 +943,7 @@ namespace ClimatesCalories
         byte[] alcoHigh = { 0, 0, 0, 10, 12, 15, 20, 20, 40 };
 
 
-        static string regionMenu()
+        static string regionMenuDay()
         {
             //0 = Balfiera
             //1 = North

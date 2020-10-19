@@ -418,6 +418,9 @@ namespace ClimatesCalories
 
             string adviceTxt = "";
 
+            if (playerEntity.IsInBeastForm)
+                return adviceTxt;
+
             if (totalTemp < -10)
             {
                 if (!cloak && isWeather && !isDungeon)
