@@ -28,6 +28,7 @@ namespace ClimatesCalories
     {
         public int WetCount;
         public int AttCount;
+        public int Thirst;
         public uint Starvation;
         public bool Hungry;
         public bool Starving;
@@ -68,6 +69,7 @@ namespace ClimatesCalories
             {
                 WetCount = 0,
                 AttCount = 0,
+                Thirst = 0,
                 Starvation = 0,
                 Hungry = false,
                 Starving = false,
@@ -94,6 +96,7 @@ namespace ClimatesCalories
             {
                 WetCount = wetCount,
                 AttCount = attCount,
+                Thirst = thirst,
                 Starvation = Hunger.starvDays,
                 Hungry = Hunger.hungry,
                 Starving = Hunger.starving,
@@ -118,6 +121,7 @@ namespace ClimatesCalories
             var climateCaloriesSaveData = (ClimateCaloriesSaveData)saveData;
             wetCount = climateCaloriesSaveData.WetCount;
             attCount = climateCaloriesSaveData.AttCount;
+            thirst = climateCaloriesSaveData.Thirst;
             Hunger.starvDays = climateCaloriesSaveData.Starvation;
             Hunger.hungry = climateCaloriesSaveData.Hungry;
             Hunger.starving = climateCaloriesSaveData.Starving;
@@ -201,18 +205,22 @@ namespace ClimatesCalories
             itemHelper.RegisterCustomItem(ItemSaltedFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemSaltedFish));
             itemHelper.RegisterCustomItem(ItemMeat.templateIndex, ItemGroups.UselessItems2, typeof(ItemMeat));
 
-            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_CampEquip, Camping.UseCampEquip);
-            DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
-            DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
-            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
-            DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(templateIndex_Rations, ItemGroups.UselessItems2);
-            DaggerfallUnity.Instance.ItemHelper.RegisterItemUseHandler(templateIndex_Rations, UseRations);
+            itemHelper.RegisterItemUseHandler(templateIndex_CampEquip, Camping.UseCampEquip);
+            itemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
+            itemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
+            itemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
+            itemHelper.RegisterCustomItem(templateIndex_Rations, ItemGroups.UselessItems2);
+            itemHelper.RegisterItemUseHandler(templateIndex_Rations, UseRations);
+
             PlayerActivate.RegisterCustomActivation(mod, 101, 0, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 101, 5, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 210, 0, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 210, 1, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 41116, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 41117, Camping.RestOrPackFire);
+            PlayerActivate.RegisterCustomActivation(mod, 41220, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 41221, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 41222, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 2, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 8, WaterSourceActivation);
@@ -226,6 +234,7 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 186, 2, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 186, 3, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 197, 0, WaterSourceActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 085, 0, WaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
 
@@ -244,7 +253,7 @@ namespace ClimatesCalories
 
         private static void WaterSourceActivation(RaycastHit hit)
         {
-            RefillWater(10);
+            RefillWater(100);
         }
 
         private static void DryWaterSourceActivation(RaycastHit hit)
@@ -364,11 +373,14 @@ namespace ClimatesCalories
                 lookingUp = true;
             }
 
-            if (playerEntity.InPrison)
+            if (playerEntity.InPrison || playerEntity.Arrested)
                 inPrison = true;
 
             if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
                 return;
+
+            if (Hunting.HuntingTime && GameManager.Instance.IsPlayerOnHUD)
+                Hunting.HuntingTime = false;
 
             if (startRound)
             {
@@ -466,10 +478,18 @@ namespace ClimatesCalories
         {
             startRound = true;
             DaggerfallUnityItem campEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 530);
+            DaggerfallUnityItem rations = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531);
+            DaggerfallUnityItem waterSkin = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 539);
             campEquip.currentCondition = 3;
+            rations.weightInKg = 1;
             GameManager.Instance.PlayerEntity.Items.AddItem(campEquip);
-            GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531));
+            GameManager.Instance.PlayerEntity.Items.AddItem(rations);
+            GameManager.Instance.PlayerEntity.Items.AddItem(waterSkin);
             Hunger.hungry = false;
+            attCount = 0;
+            thirst = 0;
+            TavernWindow.drunk = 0;
+            Sleep.sleepyCounter = 0;
             playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 10;
             Sleep.wakeOrSleepTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             Debug.Log("[Climates & Calories] OnStartGame");
@@ -505,9 +525,9 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                cloak = ItemBuilder.CreateWomensClothing(WomensClothing.Formal_cloak, race);
-                boots = ItemBuilder.CreateWomensClothing(WomensClothing.Shoes, race);
-            }
+                    cloak = ItemBuilder.CreateWomensClothing(WomensClothing.Formal_cloak, race);
+                    boots = ItemBuilder.CreateWomensClothing(WomensClothing.Shoes, race);
+                }
                 cloak.CurrentVariant = 1;
                 cloak.currentCondition /= 4;
                 boots.currentCondition /= 4;
@@ -591,6 +611,7 @@ namespace ClimatesCalories
                     txtCount = txtIntervals;
                     wetCount = 0;
                     attCount = 0;
+                    thirst = 0;
                     fastTravelTime++;
                     TavernWindow.drunk = 0;
                     Sleep.sleepyCounter = 0;
@@ -655,7 +676,7 @@ namespace ClimatesCalories
                         {
                             DaggerfallUI.AddHUDText("You should have rested by a fire...");
                         }
-                        else if (GameManager.Instance.PlayerGPS.IsPlayerInLocationRect)
+                        else if (!GameManager.Instance.PlayerGPS.IsPlayerInLocationRect)
                         {
                             DaggerfallUI.AddHUDText("Sleeping on the ground was rough...");
                         }
@@ -680,13 +701,17 @@ namespace ClimatesCalories
                     }
                     txtCount++;
 
-                    if (natCharTemp > 10 && Climates.gotDrink && !GameManager.IsGamePaused && !isVampire && !playerEntity.IsInBeastForm)
+                    if (!GameManager.IsGamePaused && !isVampire && !playerEntity.IsInBeastForm)
                     {
-                        thirst++;
-                        if (thirst > 5)
+                        thirst += Math.Min(Math.Max(totalTemp - 10, 1), 30);
+                        if (thirst > 100 && Climates.gotDrink)
                         {
                             thirst = 0;
                             DrinkWater();
+                        }
+                        else if (thirst > 100)
+                        {
+                            fatigueDmg += (thirst / 100);
                         }
                     }
 
@@ -766,12 +791,15 @@ namespace ClimatesCalories
                         if (!GameManager.IsGamePaused) { DaggerfallUI.AddHUDText("You are exhausted and need to rest..."); }
                     }
 
-                    if (!roadFollow && !pathFollow && !playerGPS.IsPlayerInLocationRect && !Hunting.HuntingTime)
+                    if (!roadFollow && !pathFollow && !playerGPS.IsPlayerInLocationRect && !Hunting.HuntingTime && playerEntity.CurrentFatigue > 10)
                         playerEntity.DecreaseFatigue(1, true);
 
-                    playerEntity.DecreaseFatigue(fatigueDmg, true);
-                    playerEntity.DecreaseMagicka(fatigueDmg);
-
+                    if (!Hunting.HuntingTime)
+                    {
+                        playerEntity.DecreaseFatigue(fatigueDmg, true);
+                        playerEntity.DecreaseMagicka(fatigueDmg);
+                    }
+                   
                     debuffValue = (int)Hunger.starvDays * 2;
 
                     if (attCount > 0)
@@ -783,6 +811,7 @@ namespace ClimatesCalories
                             if (absTemp > 50) { tempAttDebuff *= 2; }
                             else { tempAttDebuff /= 2; }
                         }
+                        tempAttDebuff += (thirst / 100);
                         debuffValue += tempAttDebuff;
                     }
 
@@ -804,7 +833,8 @@ namespace ClimatesCalories
         static void DrinkWater()
         {
             List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
-            const string sipWater = "You take a sip from your waterskin.";
+            const string sipWater = "You drink from your waterskin.";
+            const string runningOut = "Your water skin is nearly empty.";
             foreach (DaggerfallUnityItem skin in skins)
             {
                 if (skin.weightInKg > 0.1)
@@ -815,6 +845,16 @@ namespace ClimatesCalories
                         ModManager.Instance.SendMessage("TravelOptions", "pauseTravel");
                         skin.shortName = "Empty Waterskin";
                         DaggerfallUI.AddHUDText("You drain your waterskin.");
+                    }
+                    else if (skin.weightInKg < 0.3)
+                    {
+                        ModManager.Instance.SendModMessage("TravelOptions", "isTravelActive", null, (string message, object data) =>
+                        {
+                            if ((bool)data)
+                                ModManager.Instance.SendModMessage("TravelOptions", "showMessage", runningOut);
+                            else
+                                DaggerfallUI.AddHUDText(runningOut);
+                        });
                     }
                     else
                     {
@@ -837,9 +877,16 @@ namespace ClimatesCalories
             float skinRoom = 0;
             float fill = 0;
             List<DaggerfallUnityItem> skins = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, templateIndex_Waterskin);
-            if (activation = true && skins == null)
+            if (skins.Count == 0)
             {
-                DaggerfallUI.AddHUDText("You have no skins to fill.");
+                if (thirst > 50)
+                {
+                    DaggerfallUI.AddHUDText("You quench your thirst.");
+                }
+                else
+                {
+                    DaggerfallUI.AddHUDText("You have no skins to fill.");
+                }
             }
             foreach (DaggerfallUnityItem skin in skins)
             {
@@ -858,6 +905,7 @@ namespace ClimatesCalories
                     DaggerfallUI.AddHUDText("You refill your water.");
                 }
             }
+            thirst = 0;
         }
 
 

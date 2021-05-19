@@ -33,7 +33,12 @@ namespace ClimatesCalories
 
         public static bool UseCampEquip(DaggerfallUnityItem item, ItemCollection collection)
         {
-            if (CampDeployed)
+            if (GameManager.Instance.AreEnemiesNearby(true))
+            {
+                DaggerfallUI.MessageBox("There are enemies nearby.");
+                return false;
+            }
+            else if (CampDeployed)
             {
                 DestroyCamp();
             }
@@ -85,12 +90,12 @@ namespace ClimatesCalories
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
             {
-                FirePosition = Tent.transform.position + (Tent.transform.up * 0.7f);
+                FirePosition = Tent.transform.position + (Tent.transform.up * 0.8f);
                 Tent.SetActive(false);
             }
             else
             {
-                FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
+                FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.8f);
                 Tent.SetActive(true);
             }
 
@@ -154,9 +159,16 @@ namespace ClimatesCalories
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
                 sender.CloseWindow();
-                IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
-                ClimateCalories.camping = true;
-                uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
+                if (GameManager.Instance.AreEnemiesNearby())
+                {
+                    DaggerfallUI.MessageBox("There are enemies nearby.");
+                }
+                else
+                {
+                    IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
+                    ClimateCalories.camping = true;
+                    uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
+                }
             }
             else
             {
@@ -184,14 +196,21 @@ namespace ClimatesCalories
             }
             else
             {
-                DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
-                CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
-                DestroyCamp();
-                GameManager.Instance.PlayerEntity.Items.AddItem(CampEquip);
-                CampDeployed = false;
-                FireLit = false;
-                TentMatrix = new Matrix4x4();
-                sender.CloseWindow();
+                if (!GameManager.Instance.PlayerEnterExit.IsPlayerInside && GameManager.Instance.AreEnemiesNearby())
+                {
+                    DaggerfallUI.MessageBox("There are enemies nearby.");
+                }
+                else
+                {
+                    DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
+                    CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
+                    DestroyCamp();
+                    GameManager.Instance.PlayerEntity.Items.AddItem(CampEquip);
+                    CampDeployed = false;
+                    FireLit = false;
+                    TentMatrix = new Matrix4x4();
+                    sender.CloseWindow();
+                }
             }
         }
 
@@ -222,7 +241,7 @@ namespace ClimatesCalories
             if (Physics.Raycast(ray, out hit, 10))
             {
                 Debug.Log("Setting tent position and rotation");
-                TentPosition = hit.point;
+                TentPosition = hit.point + (Vector3.down * 0.2f);
                 TentRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
             }
             else
@@ -239,7 +258,7 @@ namespace ClimatesCalories
                 Ray rayDown = new Ray(TentPosition, Vector3.down);
                 if (Physics.Raycast(rayDown, out hit, 1000))
                 {
-                    TentPosition = hit.point;
+                    TentPosition = hit.point + (Vector3.down * 0.2f);
                 }
                 else
                 {
@@ -249,7 +268,7 @@ namespace ClimatesCalories
                     Ray rayFromPlayer = new Ray(newTentPos + Vector3.up, Vector3.down);
                     if (Physics.Raycast(rayFromPlayer, out hit, 1000))
                     {
-                        TentPosition = hit.point;
+                        TentPosition = hit.point + (Vector3.down * 0.2f);
                         //FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
                     }
                     else
@@ -257,7 +276,7 @@ namespace ClimatesCalories
                         Ray rayUp = new Ray(newTentPos + (Vector3.up * 500f), Vector3.down);
                         if (Physics.Raycast(rayUp, out hit, 1000))
                         {
-                            TentPosition = hit.point;
+                            TentPosition = hit.point + (Vector3.down * 0.2f);
                             //FirePosition = Tent.transform.position + (Tent.transform.forward * 3) + (Tent.transform.up * 0.6f);
                         }
                     }

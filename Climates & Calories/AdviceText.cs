@@ -65,6 +65,7 @@ namespace ClimatesCalories
                 }
                 if (!ClimateCalories.isVampire)
                 {
+                    messages.Add(TxtWater());
                     messages.Add(TxtFood());
                     messages.Add(string.Empty);
                     messages.Add(TxtSleep());
@@ -415,6 +416,7 @@ namespace ClimatesCalories
             bool isMountain = playerGPS.CurrentClimateIndex == (int)MapsFile.Climates.Mountain || playerGPS.CurrentClimateIndex == (int)MapsFile.Climates.MountainWoods;
             DaggerfallUnityItem cloak1 = playerEntity.ItemEquipTable.GetItem(EquipSlots.Cloak1);
             DaggerfallUnityItem cloak2 = playerEntity.ItemEquipTable.GetItem(EquipSlots.Cloak2);
+            DaggerfallUnityItem shoes = playerEntity.ItemEquipTable.GetItem(EquipSlots.Feet);
 
             string adviceTxt = "";
 
@@ -487,6 +489,18 @@ namespace ClimatesCalories
                 {
                     adviceTxt = "The desert nights might be preferable to this heat.";
                 }
+                else if (shoes == null)
+                {
+                    adviceTxt = "Any footwear would be preferrable to leaving your feet bare.";
+                }
+                else if (Hunger.hungry)
+                {
+                    adviceTxt = "Eating some fresh food would keep your strength up.";
+                }
+                else if (isMountain && DaggerfallUnity.Instance.WorldTime.Now.SeasonValue == DaggerfallDateTime.Seasons.Winter)
+                {
+                    adviceTxt = "Crossing mountains in the winter is only for the most hardy.";
+                }                
             }
             else if (totalTemp > 10)
             {
@@ -525,6 +539,14 @@ namespace ClimatesCalories
                 else if (isDesert && !isNight)
                 {
                     adviceTxt = "Though monsters roam the night, it might be preferable.";
+                }
+                else if (Hunger.hungry)
+                {
+                    adviceTxt = "Eating some fresh food would keep your strength up.";
+                }
+                else if (isDesert && DaggerfallUnity.Instance.WorldTime.Now.SeasonValue == DaggerfallDateTime.Seasons.Summer)
+                {
+                    adviceTxt = "Crossing deserts in the summer is only for the most hardy.";
                 }
             }
 
@@ -584,6 +606,33 @@ namespace ClimatesCalories
             }
             
             return foodString;
+        }
+
+        public static string TxtWater()
+        {
+            int thirst = ClimateCalories.thirst;
+            string drinkString = "You have water to drink.";
+
+            if (!drink)
+            {
+                if (thirst > 500)
+                {
+                    drinkString = "You are very thirsty.";
+                }
+                else if (thirst > 100)
+                {
+                    drinkString = "You are getting thirsty.";
+                }
+                else if (playerGPS.IsPlayerInLocationRect && playerGPS.IsPlayerInTown())
+                {
+                    drinkString = "You should stock up on water while in town.";
+                }
+                else
+                {
+                    drinkString = "You have no water.";
+                }
+            }
+            return drinkString;
         }
 
         public static string TxtSleep()
