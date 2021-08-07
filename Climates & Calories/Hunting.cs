@@ -382,7 +382,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "As you pick up the dead snake, it suddenly twitches and sinks its fangs into your hand.", "You spend some time butchering the snake.", "", "You hope the snake was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
-                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                         GiveMeat(1);
                         playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     }
@@ -390,7 +390,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You miss the snake and it slithers away.", "", "As you search among the rocks you suddenly feel a sharp pain on your leg.", "", "You hope whatever bit you was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
-                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                     }
                 }
                 //Unlucky. No bow
@@ -408,14 +408,14 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "While searching the rocks, you come upon a snake.", "Its head shoots out, sinking its fangs into your hand.", "You whip it around and smack it into a rock.", "", "You spend some time butchering the snake.", "", "You hope the snake was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
-                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                         GiveMeat(1);
                     }
                     else
                     {
                         string[] messages = new string[] { "While searching the rocks, you come upon a snake.", "Its head shoots out, sinking its fangs into your hand.", "You let out a yelp as the snake dislodges and slithers under a rock.", "", "You hope the snake was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
-                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                     }
                 }
             }
@@ -443,7 +443,7 @@ namespace ClimatesCalories
             else
             {
                 string[] message = {
-                            "You spot a a gathering of trees in the distance..",
+                            "You spot a gathering of trees in the distance..",
                             " ",
                             "There might be some ripe fruits to pick from them.",
                             "",
@@ -511,7 +511,7 @@ namespace ClimatesCalories
                 if (vUnLucky)
                 {
                     string[] messages = new string[] { "You pick a strange fruit from the tree and take a tentative bite.", "It seems edible at first, but then you feel your stomach cramp.", "", "You hope it was not poisonous and continue your journey." };
-                    DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                    DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                     ClimateCalories.TextPopup(messages);
                 }
                 //UnLucky.
@@ -771,7 +771,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "You strike the water and some kind of fanged lizard", "explodes out of the water, sinking its teeth into your arm.", "You manage to shake it off and it disappears back into the water.", "", "You hope it was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
-                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(GameManager.Instance.PlayerEntity, poisonType, false);
+                        DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
                     }
                 }
             }
@@ -1094,13 +1094,12 @@ namespace ClimatesCalories
             HuntingTime = true;
             int skipAmount;
             if (hunting)
-                skipAmount = Mathf.Max(UnityEngine.Random.Range(20, 120) - (playerEntity.Stats.LiveSpeed / 10), 5);
+                skipAmount = Mathf.Max(UnityEngine.Random.Range(30, 60) - (playerEntity.Stats.LiveSpeed / 10), 5);
             else
                 skipAmount = UnityEngine.Random.Range(10, 30);
 
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
-            playerEntity.DecreaseFatigue(playerEntity.CurrentFatigue / 10);
-            HuntingTime = false;
+            playerEntity.DecreaseFatigue(UnityEngine.Random.Range(10, 50), true);
         }
 
         private static void SpawnBeast()

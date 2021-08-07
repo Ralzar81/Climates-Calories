@@ -254,6 +254,8 @@ namespace ClimatesCalories
         {
             int resFire = playerEntity.Resistances.LiveFire;
             int resFrost = playerEntity.Resistances.LiveFrost;
+            DFCareer.Elements element = DFCareer.Elements.Frost;
+            if (temp > 0) { element = DFCareer.Elements.Fire; }
 
             if (GameManager.Instance.PlayerEffectManager.HasLycanthropy())
             {
@@ -278,6 +280,8 @@ namespace ClimatesCalories
                 else if (playerEntity.RaceTemplate.LowToleranceFlags == DFCareer.EffectFlags.Frost) { resFrost -= 25; }
                 else if (playerEntity.RaceTemplate.ResistanceFlags == DFCareer.EffectFlags.Frost) { resFrost += 25; }
                 else if (playerEntity.RaceTemplate.ImmunityFlags == DFCareer.EffectFlags.Frost) { resFrost += 50; }
+                if (playerEntity.HasResistanceFlag(element)) { resFrost += 50; }
+
                 temp = Mathf.Min(temp + resFrost, 0);
             }
             else
@@ -286,6 +290,8 @@ namespace ClimatesCalories
                 else if (playerEntity.RaceTemplate.LowToleranceFlags == DFCareer.EffectFlags.Fire) { resFire -= 25; }
                 else if (playerEntity.RaceTemplate.ResistanceFlags == DFCareer.EffectFlags.Fire) { resFire += 25; }
                 else if (playerEntity.RaceTemplate.ImmunityFlags == DFCareer.EffectFlags.Fire) { resFire += 50; }
+                if (playerEntity.HasResistanceFlag(element)) { resFire += 50; }
+
                 temp = Mathf.Max(temp - resFire, 0);
             }
             return temp;
@@ -353,118 +359,6 @@ namespace ClimatesCalories
             return temp;
         }
 
-
-
-        //static int Armor(int natTemp)
-        //{
-        //    DaggerfallUnityItem rArm = playerEntity.ItemEquipTable.GetItem(EquipSlots.RightArm);
-        //    DaggerfallUnityItem lArm = playerEntity.ItemEquipTable.GetItem(EquipSlots.LeftArm);
-        //    DaggerfallUnityItem chest = playerEntity.ItemEquipTable.GetItem(EquipSlots.ChestArmor);
-        //    DaggerfallUnityItem legs = playerEntity.ItemEquipTable.GetItem(EquipSlots.LegsArmor);
-        //    DaggerfallUnityItem head = playerEntity.ItemEquipTable.GetItem(EquipSlots.Head);
-        //    int temp = 0;
-        //    int metal = 0;
-
-        //    if (chest != null)
-        //    {
-        //        switch (chest.NativeMaterialValue & 0xF00)
-        //        {
-        //            case (int)ArmorMaterialTypes.Leather:
-        //                temp += 1;
-        //                break;
-        //            case (int)ArmorMaterialTypes.Chain:
-        //                temp += 1;
-        //                metal += 1;
-        //                break;
-        //            default:
-        //                temp += 3;
-        //                metal += 4;
-        //                break;
-        //        }
-        //    }
-
-        //    if (legs != null)
-        //    {
-        //        switch (legs.NativeMaterialValue & 0xF00)
-        //        {
-        //            case (int)ArmorMaterialTypes.Leather:
-        //                temp += 1;
-        //                break;
-        //            case (int)ArmorMaterialTypes.Chain:
-        //                temp += 1;
-        //                metal += 1;
-        //                break;
-        //            default:
-        //                temp += 2;
-        //                metal += 3;
-        //                break;
-        //        }
-        //    }
-
-        //    if (lArm != null)
-        //    {
-        //        switch (lArm.NativeMaterialValue & 0xF00)
-        //        {
-        //            case (int)ArmorMaterialTypes.Leather:
-        //                temp += 1;
-        //                break;
-        //            case (int)ArmorMaterialTypes.Chain:
-        //                temp += 1;
-        //                break;
-        //            default:
-        //                temp += 1;
-        //                metal += 1;
-        //                break;
-        //        }
-
-        //    }
-        //    if (rArm != null)
-        //    {
-        //        switch (rArm.NativeMaterialValue & 0xF00)
-        //        {
-        //            case (int)ArmorMaterialTypes.Leather:
-        //                temp += 1;
-        //                break;
-        //            case (int)ArmorMaterialTypes.Chain:
-        //                temp += 1;
-        //                break;
-        //            default:
-        //                temp += 1;
-        //                metal += 1;
-        //                break;
-        //        }
-        //    }
-        //    if (head != null)
-        //    {
-        //        switch (head.NativeMaterialValue & 0xF00)
-        //        {
-        //            case (int)ArmorMaterialTypes.Leather:
-        //                temp += 2;
-        //                break;
-        //            case (int)ArmorMaterialTypes.Chain:
-        //                temp += 2;
-        //                metal += 1;
-        //                break;
-        //            default:
-        //                temp += 1;
-        //                metal += 1;
-        //                break;
-        //        }
-        //    }
-        //    int metalTemp = (metal * natTemp) / 20;
-        //    if (metalTemp > 0 && playerEnterExit.IsPlayerInSunlight && !ArmorCovered())
-        //    {
-        //        temp += metalTemp;
-        //        if (ClimateCalories.txtCount > ClimateCalories.txtIntervals && metalTemp > 5) { DaggerfallUI.AddHUDText("Your armor is starting to heat up."); }
-        //    }
-        //    else if (metalTemp < 0)
-        //    {
-        //        temp += (metalTemp + 1) / 2;
-        //        if (ClimateCalories.txtCount > ClimateCalories.txtIntervals && temp < 0) { DaggerfallUI.AddHUDText("Your armor is getting cold."); }
-        //    }
-        //    if (temp > 0) { temp = Mathf.Max(temp - ClimateCalories.wetCount, 0); }
-        //    return temp;
-        //}
 
         static public bool ArmorCovered()
         {

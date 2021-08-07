@@ -30,6 +30,9 @@ namespace ClimatesCalories
         public static int CampDmg;
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
+        protected const DaggerfallMessageBox.MessageBoxButtons cancelButton = (DaggerfallMessageBox.MessageBoxButtons)2;
+        protected const DaggerfallMessageBox.MessageBoxButtons restButton = (DaggerfallMessageBox.MessageBoxButtons)35;
+        protected const DaggerfallMessageBox.MessageBoxButtons packButton = (DaggerfallMessageBox.MessageBoxButtons)36;
 
         public static bool UseCampEquip(DaggerfallUnityItem item, ItemCollection collection)
         {
@@ -114,11 +117,13 @@ namespace ClimatesCalories
             DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (hit.transform.gameObject.GetInstanceID() == Tent.GetInstanceID())
             {
-                string[] message = { "Do you wish to rest?" };
+
+                string[] message = { "Do you wish to rest or pack up the camp?" };
                 campPopUp.SetText(message);
                 campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
-                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-                campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+                campPopUp.AddButton(packButton);
+                campPopUp.AddButton(restButton);               
+                campPopUp.AddButton(cancelButton);
                 campPopUp.Show();
             }
             else
@@ -137,8 +142,9 @@ namespace ClimatesCalories
                     string[] message = { "Do you wish to rest?" };
                     campPopUp.SetText(message);
                     campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
-                    campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-                    campPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
+                    campPopUp.AddButton(packButton);
+                    campPopUp.AddButton(restButton);                    
+                    campPopUp.AddButton(cancelButton);
                     campPopUp.Show();
                 }
                 else
@@ -156,10 +162,11 @@ namespace ClimatesCalories
 
         private static void CampPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
         {
-            if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
+
+            if (messageBoxButton == restButton)
             {
                 sender.CloseWindow();
-                if (GameManager.Instance.AreEnemiesNearby())
+                if (GameManager.Instance.AreEnemiesNearby(true))
                 {
                     DaggerfallUI.MessageBox("There are enemies nearby.");
                 }
@@ -170,33 +177,9 @@ namespace ClimatesCalories
                     uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
                 }
             }
-            else
+            else if (messageBoxButton == packButton)
             {
-                sender.CloseWindow();
-                PackOrLeaveCamp();
-            }
-        }
-
-        public static void PackOrLeaveCamp()
-        {
-            DaggerfallMessageBox packPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            string[] message = { "Do you wish to pack up your camp?" };
-            packPopUp.SetText(message);
-            packPopUp.OnButtonClick += PackPopUp_OnButtonClick;
-            packPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.Yes);
-            packPopUp.AddButton(DaggerfallMessageBox.MessageBoxButtons.No, true);
-            packPopUp.Show();
-        }
-
-        private static void PackPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
-        {
-            if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.No)
-            {
-                sender.CloseWindow();
-            }
-            else
-            {
-                if (!GameManager.Instance.PlayerEnterExit.IsPlayerInside && GameManager.Instance.AreEnemiesNearby())
+                if (!GameManager.Instance.PlayerEnterExit.IsPlayerInside && GameManager.Instance.AreEnemiesNearby(true))
                 {
                     DaggerfallUI.MessageBox("There are enemies nearby.");
                 }
@@ -211,6 +194,10 @@ namespace ClimatesCalories
                     TentMatrix = new Matrix4x4();
                     sender.CloseWindow();
                 }
+            }
+            else
+            {
+                sender.CloseWindow();
             }
         }
 

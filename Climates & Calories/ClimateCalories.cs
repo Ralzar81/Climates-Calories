@@ -407,6 +407,7 @@ namespace ClimatesCalories
                 Hunger.starvDays = 0;
                 Hunger.FoodRot(fastTravelTime);
                 Sleep.wakeOrSleepTime = currentTime;
+                RefillWater(100);
                 fastTravelTime = 0;
             }
 
@@ -792,7 +793,7 @@ namespace ClimatesCalories
                     }
 
                     if (!roadFollow && !pathFollow && !playerGPS.IsPlayerInLocationRect && !Hunting.HuntingTime && playerEntity.CurrentFatigue > 10)
-                        playerEntity.DecreaseFatigue(1, true);
+                        playerEntity.DecreaseFatigue(32);
 
                     if (!Hunting.HuntingTime)
                     {
@@ -885,7 +886,7 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                    DaggerfallUI.AddHUDText("You have no skins to fill.");
+                    DaggerfallUI.AddHUDText("You have no waterskins to fill.");
                 }
             }
             foreach (DaggerfallUnityItem skin in skins)

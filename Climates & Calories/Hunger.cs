@@ -129,7 +129,7 @@ namespace ClimatesCalories
                     DaggerfallUnityItem item = playerItems.GetItem(i);
                     if (item is AbstractItemFood)
                     {
-                        rotChance = UnityEngine.Random.Range(1, 100) + rotBonus;
+                        rotChance = UnityEngine.Random.Range(1, 100) + (rotBonus / 2);
                         AbstractItemFood food = item as AbstractItemFood;
                         if (rotChance > food.maxCondition && !food.RotFood())
                         {
