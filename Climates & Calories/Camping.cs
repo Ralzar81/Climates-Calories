@@ -12,6 +12,7 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Utility.AssetInjection;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallConnect.Utility;
+using DaggerfallWorkshop.Game.Utility.ModSupport;
 
 namespace ClimatesCalories
 {
@@ -33,6 +34,7 @@ namespace ClimatesCalories
         protected const DaggerfallMessageBox.MessageBoxButtons cancelButton = (DaggerfallMessageBox.MessageBoxButtons)2;
         protected const DaggerfallMessageBox.MessageBoxButtons restButton = (DaggerfallMessageBox.MessageBoxButtons)35;
         protected const DaggerfallMessageBox.MessageBoxButtons packButton = (DaggerfallMessageBox.MessageBoxButtons)36;
+        public static bool ironmanOptionsCamp = false;
 
         public static bool UseCampEquip(DaggerfallUnityItem item, ItemCollection collection)
         {
@@ -134,6 +136,12 @@ namespace ClimatesCalories
 
         public static void RestOrPackFire(RaycastHit hit)
         {
+            if (!GameManager.Instance.AreEnemiesNearby(true) && ironmanOptionsCamp)
+            {
+                Debug.Log("[Climates&Calories] Sending mod message to Ironman Options.");
+
+                ModManager.Instance.SendModMessage("Ironman Options", "campSave");
+            }
             DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
             if (Fire != null)
             {

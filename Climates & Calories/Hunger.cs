@@ -175,6 +175,9 @@ namespace ClimatesCalories
 
         public static void FoodEffects_OnNewMagicRound()
         {
+            if (GameManager.Instance.PlayerEffectManager.HasVampirism())
+                hunger = 0;
+
             if (hunger < 240)
             {
                 foodCount += (240 - (int)hunger);

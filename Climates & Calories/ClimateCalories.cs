@@ -173,6 +173,7 @@ namespace ClimatesCalories
         static bool startRound = false;
         static int absTempOld = 0;
         static bool tentLoad = false;
+        static bool videoIsPlaying = false;
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -192,6 +193,8 @@ namespace ClimatesCalories
             PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
             //PlayerEnterExit.OnPreTransition += TavernText_OnPreTransition;
             playerEntity.OnExhausted += PassedOut_OnExhausted;
+            DaggerfallVidPlayerWindow.OnVideoStart += BoolSet_OnVideoStart;
+            DaggerfallVidPlayerWindow.OnVideoEnd += BoolSet_OnVideoEnd;
 
             GameManager.Instance.RegisterPreventRestCondition(() => { return TooExtremeToRest(); }, "The temperature is too extreme to rest.");
             UIWindowFactory.RegisterCustomUIWindow(UIWindowType.Tavern, typeof(TavernWindow));
@@ -246,6 +249,16 @@ namespace ClimatesCalories
         //    DaggerfallUI.MessageBox("Oh what a nice inn!");
         //}
 
+        private static void BoolSet_OnVideoStart()
+        {
+            videoIsPlaying = true;
+        }
+
+        private static void BoolSet_OnVideoEnd()
+        {
+            videoIsPlaying = false;
+        }
+
         private static void PassedOut_OnExhausted(DaggerfallEntity entity)
         {
             Sleep.sleepyCounter -= 50;
@@ -287,10 +300,12 @@ namespace ClimatesCalories
 
         void Awake()
         {
+            Debug.Log("[Climates&Calories] Checking for other mods.");
             Mod rr = ModManager.Instance.GetMod("RoleplayRealism");
             Mod tt = ModManager.Instance.GetMod("TediousTravel");
             Mod ff = ModManager.Instance.GetMod("Filling Food");
             Mod cc = ModManager.Instance.GetMod("Climates&Cloaks");
+            Mod io = ModManager.Instance.GetMod("Ironman Options");
             if (rr != null)
             {
                 ModSettings rrSettings = rr.GetSettings();
@@ -311,6 +326,18 @@ namespace ClimatesCalories
             if (tediousTravel || fillingFoodOld || climatesCloaksOld)
             {
                 EntityEffectBroker.OnNewMagicRound += ClimateIncomp_OnNewMagicRound;
+            }
+            if (io != null)
+            {
+                Debug.Log("[Climates&Calories] Detected Ironman Options");
+                ModSettings ioSettings = io.GetSettings();
+                int ioDungeonSetting = ioSettings.GetValue<int>("DungeonPermanentSave", "WhenToSave");
+                int ioOutsideSetting = ioSettings.GetValue<int>("OutsidePermanentSave", "WhenToSave");
+                if (ioDungeonSetting == 3 || ioOutsideSetting == 3)
+                    Camping.ironmanOptionsCamp = true;
+                Debug.Log("[Climates&Calories] ioDungeonSetting = " + ioDungeonSetting.ToString());
+                Debug.Log("[Climates&Calories] ioOutsideSetting = " + ioOutsideSetting.ToString());
+                Debug.Log("[Climates&Calories] ironmanOptionsCamp = " + Camping.ironmanOptionsCamp.ToString());
             }
 
             mod.IsReady = true;
@@ -607,7 +634,7 @@ namespace ClimatesCalories
                         playerEntity.IncreaseHealth(1);
                 }
                 //When fast traveling counters resets.
-                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || inPrison)
+                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || inPrison || (!playerEntity.IsResting && !GameManager.Instance.IsPlayerOnHUD && !GameManager.Instance.IsPlayingGame()))
                 {
                     txtCount = txtIntervals;
                     wetCount = 0;
@@ -624,7 +651,7 @@ namespace ClimatesCalories
                 else if (playerEntity.IsResting && !playerEntity.IsLoitering)
                 {
                     if (!playerEnterExit.IsPlayerInside && Dice100.SuccessRoll(playerEntity.Stats.LiveLuck))
-                        noSpawns = true;                  
+                        noSpawns = true;
 
                     TavernWindow.Drunk();
                     Hunger.FoodRotCounter();
@@ -843,7 +870,7 @@ namespace ClimatesCalories
                     skin.weightInKg -= 0.1f;
                     if (skin.weightInKg <= 0.1)
                     {
-                        ModManager.Instance.SendMessage("TravelOptions", "pauseTravel");
+                        ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
                         skin.shortName = "Empty Waterskin";
                         DaggerfallUI.AddHUDText("You drain your waterskin.");
                     }

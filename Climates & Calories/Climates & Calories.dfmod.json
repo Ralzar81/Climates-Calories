@@ -1,9 +1,9 @@
 {
     "ModTitle": "Climates & Calories",
-    "ModVersion": "1.5.10",
+    "ModVersion": "1.5.11",
     "ModAuthor": "Ralzar",
     "ContactInfo": "https://forums.dfworkshop.net/",
-    "DFUnity_Version": "0.11.5",
+    "DFUnity_Version": "0.12.1",
     "ModDescription": "Introduces temperature effects based on climates, seasons, weather and clothes etc. Also adds food items and starvation effects.",
     "GUID": "7975b109-1381-485b-bdfd-8d076bb5d0c9",
     "Files": [
@@ -69,6 +69,12 @@
             "IsOptional": false,
             "IsPeer": true,
             "Version": "0.9.2"
+        },
+        {
+            "Name": "ironman options",
+            "IsOptional": true,
+            "IsPeer": false,
+            "Version": "1.1.2"
         }
     ]
 }
