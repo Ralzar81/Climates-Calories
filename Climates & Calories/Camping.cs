@@ -85,17 +85,22 @@ namespace ClimatesCalories
             }
             //Attempt to load a model replacement
             Tent = MeshReplacement.ImportCustomGameobject(tentModelID, null, TentMatrix);
-            Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
+            Fire = MeshReplacement.ImportCustomFlatGameobject(210, 1, FirePosition, null);
+            //Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
             if (Tent == null)
             {
                 Tent = GameObjectHelper.CreateDaggerfallMeshGameObject(tentModelID, null);
+            }
+            if (Fire == null)
+            {
+                Fire = GameObjectHelper.CreateDaggerfallBillboardGameObject(210, 1, null);
             }
             //Set the model's position in the world
 
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
             {
-                FirePosition = Tent.transform.position + (Tent.transform.up * 0.8f);
+                FirePosition = (Tent.transform.position + Tent.transform.forward) + (Tent.transform.up * 0.9f);
                 Tent.SetActive(false);
             }
             else

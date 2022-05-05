@@ -198,7 +198,7 @@ namespace ClimatesCalories
             }
             else
             {
-                int quality = Mathf.Max((buildingData.quality / 2) - 3, 3);
+                int quality = Mathf.Max((buildingData.quality / 2), 4);
                 int cost = FormulaHelper.CalculateRoomCost(daysToRent) * quality;
                 
                 tradePrice = FormulaHelper.CalculateTradePrice(cost, buildingData.quality, false);

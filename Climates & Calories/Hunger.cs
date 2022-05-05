@@ -175,9 +175,6 @@ namespace ClimatesCalories
 
         public static void FoodEffects_OnNewMagicRound()
         {
-            if (GameManager.Instance.PlayerEffectManager.HasVampirism())
-                hunger = 0;
-
             if (hunger < 240)
             {
                 foodCount += (240 - (int)hunger);
@@ -189,9 +186,11 @@ namespace ClimatesCalories
             }
             else if (!hungry)
             {
+                Debug.Log("Stomache message triggers.");
                 hungry = true;
                 DaggerfallUI.AddHUDText("Your stomach rumbles...");
                 ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
+                Debug.Log("FoodEffects_OnNewMagicRound() stomache message displayed. hunger = " + hunger.ToString());
             }
         }
     }

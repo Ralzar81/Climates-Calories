@@ -19,7 +19,6 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Serialization;
 using System.Collections.Generic;
 using DaggerfallConnect.Utility;
-using DaggerfallWorkshop.Game.Formulas;
 
 namespace ClimatesCalories
 {
@@ -54,6 +53,9 @@ namespace ClimatesCalories
         public const int templateIndex_CampEquip = 530;
         public const int templateIndex_Rations = 531;
         public const int templateIndex_Waterskin = 539;
+        public const string CAMP_POPUP = "campPopup";
+        public const string WATER_REFILL = "waterRefill";
+        public const string EAT_FOOD = "eatFood";
 
         static Mod mod;
         static ClimateCalories instance;
@@ -147,7 +149,7 @@ namespace ClimatesCalories
             //}
             isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
             restoreSaveRound = true;
-
+            fastTravelTime = 0;
             firstModUse = climateCaloriesSaveData.FirstModUse;
             if(firstModUse || Sleep.wakeOrSleepTime == 0)
             {
@@ -174,6 +176,7 @@ namespace ClimatesCalories
         static int absTempOld = 0;
         static bool tentLoad = false;
         static bool videoIsPlaying = false;
+        static bool isExhausted = false;
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -262,6 +265,7 @@ namespace ClimatesCalories
         private static void PassedOut_OnExhausted(DaggerfallEntity entity)
         {
             Sleep.sleepyCounter -= 50;
+            isExhausted = true;
         }
 
         private static void WaterSourceActivation(RaycastHit hit)
@@ -340,6 +344,7 @@ namespace ClimatesCalories
                 Debug.Log("[Climates&Calories] ironmanOptionsCamp = " + Camping.ironmanOptionsCamp.ToString());
             }
 
+            mod.MessageReceiver = MessageReceiver;
             mod.IsReady = true;
         }
 
@@ -367,12 +372,10 @@ namespace ClimatesCalories
         static public int thirst = 0;
         static public bool camping = false;
         static private bool groundSleep = false;
-        static private bool tooColdOrWarm = false;
         static private int sleepTemp = 0;
         static public bool playerIsWading = false;
         static public bool isVampire = GameManager.Instance.PlayerEffectManager.HasVampirism();
         static public bool inPrison = playerEntity.InPrison;
-        static private int noSpawnsCounter = 0;
         static private bool noSpawns = false;
 
         static public bool roadFollow = false;
@@ -428,15 +431,21 @@ namespace ClimatesCalories
 
             if (fastTravelTime > 0 && !DaggerfallUI.Instance.FadeBehaviour.FadeInProgress)
             {
-                playerEntity.LastTimePlayerAteOrDrankAtTavern = Hunger.gameMinutes - 260;
-                Hunger.hungry = false;
-                Hunger.starving = false;
-                Hunger.starvDays = 0;
-                Hunger.FoodRot(fastTravelTime);
-                Sleep.wakeOrSleepTime = currentTime;
-                RefillWater(100);
+                if (fastTravelTime > 1 && !isExhausted)
+                {
+                    playerEntity.LastTimePlayerAteOrDrankAtTavern = Hunger.gameMinutes - 260;
+                    Hunger.hungry = false;
+                    Hunger.starving = false;
+                    Hunger.starvDays = 0;
+                    Hunger.FoodRot(fastTravelTime);
+                    Sleep.wakeOrSleepTime = currentTime;
+                    RefillWater(100);
+                }
                 fastTravelTime = 0;
             }
+
+            if (isExhausted && DaggerfallUI.UIManager.WindowCount == 0)
+                isExhausted = false;
 
             if (isVampire)
             {
@@ -539,6 +548,18 @@ namespace ClimatesCalories
                 wetCount = 100;
                 string[] messages = new string[] { "You are cold and wet from the shipwreck.", "You should use the campfire to get dry." };
                 TextPopup(messages);
+                DaggerfallUnityItem boots;
+                Races race = playerEntity.Race;
+                if (playerEntity.Gender == Genders.Male)
+                {
+                    boots = ItemBuilder.CreateMensClothing(MensClothing.Shoes, race);
+                }
+                else
+                {
+                    boots = ItemBuilder.CreateWomensClothing(WomensClothing.Shoes, race);
+                }
+                boots.currentCondition /= 4;
+                GameManager.Instance.PlayerEntity.Items.AddItem(boots);
             }
             else
             {
@@ -602,16 +623,27 @@ namespace ClimatesCalories
                 int natCharTemp = Climates.natCharTemp;
                 int baseNatTemp = Climates.baseNatTemp;
                 int totalTemp = Climates.totalTemp;
+                bool travelOptionsActive = false;
                 noSpawns = false;
-                ModManager.Instance.SendModMessage("TravelOptions", "isFollowingRoad", null, (string message, object data) =>
+
+                ModManager.Instance.SendModMessage("TravelOptions", "isTravelActive", null, (string message, object data) =>
                 {
-                    roadFollow = (bool)data;
+                    travelOptionsActive = (bool)data;
                 });
 
-                ModManager.Instance.SendModMessage("TravelOptions", "isPathFollowing", null, (string message, object data) =>
+                if (travelOptionsActive)
                 {
-                    pathFollow = (bool)data;
-                });
+                    ModManager.Instance.SendModMessage("TravelOptions", "isFollowingRoad", null, (string message, object data) =>
+                    {
+                        roadFollow = (bool)data;
+                    });
+
+                    ModManager.Instance.SendModMessage("TravelOptions", "isPathFollowing", null, (string message, object data) =>
+                    {
+                        pathFollow = (bool)data;
+                    });
+                }                
+
                 //When inside or camping, the counters reset faster and no temp effects are applied.
                 if (playerEnterExit.IsPlayerInsideBuilding || (playerEntity.IsResting && camping))
                 {
@@ -634,18 +666,28 @@ namespace ClimatesCalories
                         playerEntity.IncreaseHealth(1);
                 }
                 //When fast traveling counters resets.
-                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress && GameManager.Instance.IsPlayerOnHUD) || inPrison || (!playerEntity.IsResting && !GameManager.Instance.IsPlayerOnHUD && !GameManager.Instance.IsPlayingGame()))
+                else if ((DaggerfallUI.Instance.FadeBehaviour.FadeInProgress
+                    && GameManager.Instance.IsPlayerOnHUD)
+                    || inPrison
+                    || (!playerEntity.IsResting
+                        && !GameManager.Instance.IsPlayerOnHUD
+                        && !GameManager.Instance.IsPlayingGame()
+                        && !travelOptionsActive
+                        && !(DaggerfallUI.UIManager.WindowCount > 1 && DaggerfallUI.UIManager.TopWindow is DaggerfallMessageBox)))
                 {
-                    txtCount = txtIntervals;
-                    wetCount = 0;
-                    attCount = 0;
-                    thirst = 0;
                     fastTravelTime++;
-                    TavernWindow.drunk = 0;
-                    Sleep.sleepyCounter = 0;
-                    Sleep.wakeOrSleepTime = currentTime;
-                    if (inPrison && GameManager.Instance.IsPlayerOnHUD)
-                        inPrison = false;
+                    if (fastTravelTime > 1)
+                    {
+                        txtCount = txtIntervals;
+                        wetCount = 0;
+                        attCount = 0;
+                        thirst = 0;
+                        TavernWindow.drunk = 0;
+                        Sleep.sleepyCounter = 0;
+                        Sleep.wakeOrSleepTime = currentTime;
+                        if (inPrison && GameManager.Instance.IsPlayerOnHUD)
+                            inPrison = false;
+                    }
                 }
                 //Sleeping outside. I keep track of temp during sleep and apply effects when waking up.
                 else if (playerEntity.IsResting && !playerEntity.IsLoitering)
@@ -1059,11 +1101,11 @@ namespace ClimatesCalories
             if (playerEntity.CurrentHealth > 5)
                 playerEntity.DecreaseHealth(1);
 
-            if (txtCount >= txtIntervals && cTop)
+            if (txtCount >= txtIntervals && !cTop)
             {
                 DaggerfallUI.AddHUDText("The sun burns your bare skin.");
             }
-            else if (txtCount >= txtIntervals && cBottom)
+            else if (txtCount >= txtIntervals && !cBottom)
             {
                 DaggerfallUI.AddHUDText("The sun burns your bare legs.");
             }
@@ -1438,6 +1480,27 @@ namespace ClimatesCalories
             catch (Exception e)
             {
                 Debug.LogError(string.Format("Error Registering RealisticWagon Console commands: {0}", e.Message));
+            }
+        }
+
+        void MessageReceiver(string message, object data, DFModMessageCallback callBack)
+        {
+            Debug.Log("[Climates & Calories] mod message recieved");
+            switch (message)
+            {
+                case CAMP_POPUP:
+                    Camping.RestOrPackFire((RaycastHit)data);
+                    break;
+                case WATER_REFILL:
+                    RefillWater((float)data);
+                    break;
+                case EAT_FOOD:
+                    playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+                    DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
+                    break;
+                default:
+                    Debug.LogErrorFormat("{0}: unknown message received ({1}).", this, message);
+                    break;
             }
         }
 

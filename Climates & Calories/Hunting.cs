@@ -75,7 +75,7 @@ namespace ClimatesCalories
                             {
                                 DaggerfallUnityItem foodItem2 = FoodLoot();
                                 entityBehaviour.CorpseLootContainer.Items.AddItem(foodItem2);
-                            }
+                            }      
                         }
                     }
                 }
