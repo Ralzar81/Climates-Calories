@@ -19,6 +19,7 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Serialization;
 using System.Collections.Generic;
 using DaggerfallConnect.Utility;
+using DaggerfallWorkshop.Game.Formulas;
 
 namespace ClimatesCalories
 {
@@ -53,9 +54,12 @@ namespace ClimatesCalories
         public const int templateIndex_CampEquip = 530;
         public const int templateIndex_Rations = 531;
         public const int templateIndex_Waterskin = 539;
+        public const int templateIndex_Skillet = 540;
         public const string CAMP_POPUP = "campPopup";
         public const string WATER_REFILL = "waterRefill";
         public const string EAT_FOOD = "eatFood";
+        public const string DRY_PLAYER = "dryPlayer";
+        public const string ADD_ITEM = "addITEM";
 
         static Mod mod;
         static ClimateCalories instance;
@@ -194,7 +198,6 @@ namespace ClimatesCalories
             PlayerEnterExit.OnTransitionExterior += Camping.Destroy_OnTransition;
             PlayerEnterExit.OnTransitionDungeonInterior += Camping.Destroy_OnTransition;
             PlayerEnterExit.OnTransitionDungeonExterior += Camping.Destroy_OnTransition;
-            //PlayerEnterExit.OnPreTransition += TavernText_OnPreTransition;
             playerEntity.OnExhausted += PassedOut_OnExhausted;
             DaggerfallVidPlayerWindow.OnVideoStart += BoolSet_OnVideoStart;
             DaggerfallVidPlayerWindow.OnVideoEnd += BoolSet_OnVideoEnd;
@@ -207,16 +210,19 @@ namespace ClimatesCalories
             itemHelper.RegisterCustomItem(ItemApple.templateIndex, ItemGroups.UselessItems2, typeof(ItemApple));
             itemHelper.RegisterCustomItem(ItemOrange.templateIndex, ItemGroups.UselessItems2, typeof(ItemOrange));
             itemHelper.RegisterCustomItem(ItemBread.templateIndex, ItemGroups.UselessItems2, typeof(ItemBread));
-            itemHelper.RegisterCustomItem(ItemFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemFish));
-            itemHelper.RegisterCustomItem(ItemSaltedFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemSaltedFish));
+            itemHelper.RegisterCustomItem(ItemRawFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemRawFish));
+            itemHelper.RegisterCustomItem(ItemCookedFish.templateIndex, ItemGroups.UselessItems2, typeof(ItemCookedFish));
             itemHelper.RegisterCustomItem(ItemMeat.templateIndex, ItemGroups.UselessItems2, typeof(ItemMeat));
+            itemHelper.RegisterCustomItem(ItemRawMeat.templateIndex, ItemGroups.UselessItems2, typeof(ItemRawMeat));
+            itemHelper.RegisterCustomItem(ItemRations.templateIndex, ItemGroups.UselessItems2, typeof(ItemRations));
 
             itemHelper.RegisterItemUseHandler(templateIndex_CampEquip, Camping.UseCampEquip);
             itemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
             itemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
-            itemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseWaterskin);
-            itemHelper.RegisterCustomItem(templateIndex_Rations, ItemGroups.UselessItems2);
-            itemHelper.RegisterItemUseHandler(templateIndex_Rations, UseRations);
+            itemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseAutoItem);
+            itemHelper.RegisterItemUseHandler(templateIndex_Rations, UseAutoItem);
+            itemHelper.RegisterCustomItem(templateIndex_Skillet, ItemGroups.UselessItems2);
+            itemHelper.RegisterItemUseHandler(templateIndex_Skillet, UseAutoItem);
 
             PlayerActivate.RegisterCustomActivation(mod, 101, 0, Camping.RestOrPackFire);
             PlayerActivate.RegisterCustomActivation(mod, 101, 5, Camping.RestOrPackFire);
@@ -244,13 +250,13 @@ namespace ClimatesCalories
             PlayerActivate.RegisterCustomActivation(mod, 212, 3, DryWaterSourceActivation);
             PlayerActivate.RegisterCustomActivation(mod, 41606, Camping.RestOrPackTent);
 
+            PlayerActivate.RegisterCustomActivation(mod, 41000, Camping.BedActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 41001, Camping.BedActivation);
+            PlayerActivate.RegisterCustomActivation(mod, 41002, Camping.BedActivation);
+
             EnemyDeath.OnEnemyDeath += Hunting.EnemyDeath_OnEnemyDeath;
         }
 
-        //private static void TavernText_OnPreTransition(PlayerEnterExit.TransitionEventArgs args)
-        //{
-        //    DaggerfallUI.MessageBox("Oh what a nice inn!");
-        //}
 
         private static void BoolSet_OnVideoStart()
         {
@@ -278,27 +284,35 @@ namespace ClimatesCalories
             DaggerfallUI.AddHUDText("This fountain is dry as dust.");
         }
 
-        public static bool UseWaterskin(DaggerfallUnityItem item, ItemCollection collection)
+        public static bool UseAutoItem(DaggerfallUnityItem item, ItemCollection collection)
         {
-            if (item.weightInKg <= 0.1)
+            if (item.TemplateIndex == templateIndex_Waterskin)
             {
-                DaggerfallUI.MessageBox(string.Format("You should find a tavern or another source of water to refill the skin."));
-            }
-            else if (item.weightInKg <= 1)
-            {
-                DaggerfallUI.MessageBox(string.Format("Your waterskin is almost empty."));
-            }
-            else
-            {
-                DaggerfallUI.MessageBox(string.Format("When too hot, you will drink some water."));
+                if (item.weightInKg <= 0.1)
+                {
+                    DaggerfallUI.MessageBox(string.Format("You should find a tavern or another source of water to refill the skin."));
+                }
+                else if (item.weightInKg <= 1)
+                {
+                    DaggerfallUI.MessageBox(string.Format("Your waterskin is almost empty."));
+                }
+                else
+                {
+                    DaggerfallUI.MessageBox(string.Format("When too hot, you will drink some water."));
 
+                }
+            }                
+            else if (item.TemplateIndex == templateIndex_Rations)
+            {
+                DaggerfallUI.MessageBox(string.Format("When too hungry, you will eat some rations."));
             }
-            return false;
-        }
-
-        public static bool UseRations(DaggerfallUnityItem item, ItemCollection collection)
-        {
-            DaggerfallUI.MessageBox(string.Format("When too hungry, you will eat some rations."));
+            else if (item.TemplateIndex == templateIndex_Skillet)
+            {
+                if (item.currentCondition < 1)
+                    DaggerfallUI.MessageBox(string.Format("This skillet is broken."));
+                else
+                    DaggerfallUI.MessageBox(string.Format("When cooking at a campfire, you will use this skillet."));
+            }
             return false;
         }
 
@@ -1470,19 +1484,6 @@ namespace ClimatesCalories
             if (totalTemp < -10 && !GameManager.Instance.PlayerMotor.IsSwimming && wetCount > 10) { DaggerfallUI.AddHUDText("You should make camp and dry off."); }
         }
 
-        public static void RegisterConsoleCommands()
-        {
-            Debug.Log("[Realistic Wagon] Trying to register console commands.");
-            try
-            {
-                ConsoleCommandsDatabase.RegisterCommand(GetTent.name, GetTent.description, GetTent.usage, GetTent.Execute);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(string.Format("Error Registering RealisticWagon Console commands: {0}", e.Message));
-            }
-        }
-
         void MessageReceiver(string message, object data, DFModMessageCallback callBack)
         {
             Debug.Log("[Climates & Calories] mod message recieved");
@@ -1496,11 +1497,33 @@ namespace ClimatesCalories
                     break;
                 case EAT_FOOD:
                     playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-                    DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
+                    break;
+                case ADD_ITEM:
+                    if ((int)data > 530 && (int)data <= 540)
+                        playerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, (int)data));
+                    break;
+                case DRY_PLAYER:
+                    wetCount -= (int)data;
+                    if (wetCount < 0) wetCount = 0;
                     break;
                 default:
                     Debug.LogErrorFormat("{0}: unknown message received ({1}).", this, message);
                     break;
+            }
+        }
+
+        public static void RegisterConsoleCommands()
+        {
+            Debug.Log("[Realistic Wagon] Trying to register console commands.");
+            try
+            {
+                ConsoleCommandsDatabase.RegisterCommand(GetTent.name, GetTent.description, GetTent.usage, GetTent.Execute);
+                ConsoleCommandsDatabase.RegisterCommand(AddSkillet.name, AddSkillet.description, AddSkillet.usage, AddSkillet.Execute);
+                ConsoleCommandsDatabase.RegisterCommand(AddCampEquip.name, AddCampEquip.description, AddCampEquip.usage, AddCampEquip.Execute);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(string.Format("Error Registering Climates&Calories Console commands: {0}", e.Message));
             }
         }
 
@@ -1514,16 +1537,44 @@ namespace ClimatesCalories
             {
                 string result = "error";
                 if (!Camping.CampDeployed)
-                    result = "No wagon to rescue";
+                    result = "No tent to rescue";
                 else if (!playerEnterExit.IsPlayerInside && GameManager.Instance.PlayerController.isGrounded)
                 {
                     Camping.DestroyCamp();
                     Camping.DeployTent();
-                    result = "Wagon Rescued";
+                    result = "Tent Rescued";
                 }
                 else
                     result = "Command only possible while on the ground outside.";
                 return result;
+            }
+        }
+
+        private static class AddSkillet
+        {
+            public static readonly string name = "add_skillet";
+            public static readonly string description = "Add skillet to inventory.";
+            public static readonly string usage = "add_skillet";
+
+            public static string Execute(params string[] args)
+            {
+                DaggerfallUnityItem skillet = ItemBuilder.CreateItem(ItemGroups.UselessItems2, templateIndex_Skillet);
+                GameManager.Instance.PlayerEntity.Items.AddItem(skillet);
+                return "skillet added";
+            }
+        }
+
+        private static class AddCampEquip
+        {
+            public static readonly string name = "add_campequip";
+            public static readonly string description = "Add camping equipment to inventory.";
+            public static readonly string usage = "add_campequip";
+
+            public static string Execute(params string[] args)
+            {
+                DaggerfallUnityItem campEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, templateIndex_CampEquip);
+                GameManager.Instance.PlayerEntity.Items.AddItem(campEquip);
+                return "camping equipment added";
             }
         }
     }    

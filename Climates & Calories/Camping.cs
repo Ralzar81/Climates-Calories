@@ -13,6 +13,7 @@ using DaggerfallWorkshop.Utility.AssetInjection;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallConnect.Utility;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
+using System.Collections.Generic;
 
 namespace ClimatesCalories
 {
@@ -32,9 +33,20 @@ namespace ClimatesCalories
         public const int tentModelID = 41606;
         public const int templateIndex_Tent = 515;
         protected const DaggerfallMessageBox.MessageBoxButtons cancelButton = (DaggerfallMessageBox.MessageBoxButtons)2;
+        protected const DaggerfallMessageBox.MessageBoxButtons cookButton = (DaggerfallMessageBox.MessageBoxButtons)37;
         protected const DaggerfallMessageBox.MessageBoxButtons restButton = (DaggerfallMessageBox.MessageBoxButtons)35;
         protected const DaggerfallMessageBox.MessageBoxButtons packButton = (DaggerfallMessageBox.MessageBoxButtons)36;
         public static bool ironmanOptionsCamp = false;
+        static UserInterfaceManager uiManager = DaggerfallUI.Instance.UserInterfaceManager;
+        private static List<DaggerfallUnityItem> rawFood;
+        private static List<DaggerfallUnityItem> rawFish;
+        private static DaggerfallUnityItem usedSkillet;
+
+        public static void BedActivation(RaycastHit hit)
+        {
+            ClimateCalories.camping = true;
+            DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+        }
 
         public static bool UseCampEquip(DaggerfallUnityItem item, ItemCollection collection)
         {
@@ -51,6 +63,11 @@ namespace ClimatesCalories
             {
                     DaggerfallUI.MessageBox("You can not set up your tent indoors.");
                     return false;
+            }
+            else if (GameManager.Instance.PlayerGPS.IsPlayerInTown(true, true))
+            {
+                DaggerfallUI.MessageBox("It is illegal to camp in town.");
+                return false;
             }
             else
             {
@@ -100,7 +117,7 @@ namespace ClimatesCalories
             Tent.transform.SetPositionAndRotation(TentPosition, TentRotation);
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
             {
-                FirePosition = (Tent.transform.position + Tent.transform.forward) + (Tent.transform.up * 0.9f);
+                FirePosition = Tent.transform.position + (Tent.transform.up * 0.9f);
                 Tent.SetActive(false);
             }
             else
@@ -125,11 +142,12 @@ namespace ClimatesCalories
             if (hit.transform.gameObject.GetInstanceID() == Tent.GetInstanceID())
             {
 
-                string[] message = { "Do you wish to rest or pack up the camp?" };
+                string[] message = { "Do you wish to rest, cook or pack?" };
                 campPopUp.SetText(message);
                 campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                campPopUp.AddButton(restButton);
+                campPopUp.AddButton(cookButton);
                 campPopUp.AddButton(packButton);
-                campPopUp.AddButton(restButton);               
                 campPopUp.AddButton(cancelButton);
                 campPopUp.Show();
             }
@@ -141,36 +159,58 @@ namespace ClimatesCalories
 
         public static void RestOrPackFire(RaycastHit hit)
         {
-            if (!GameManager.Instance.AreEnemiesNearby(true) && ironmanOptionsCamp)
+            if (GameManager.Instance.AreEnemiesNearby(true))
             {
-                Debug.Log("[Climates&Calories] Sending mod message to Ironman Options.");
-
-                ModManager.Instance.SendModMessage("Ironman Options", "campSave");
-            }
-            DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            if (Fire != null)
-            {
-                if (hit.transform.gameObject.GetInstanceID() == Fire.GetInstanceID())
-                {
-                    string[] message = { "Do you wish to rest?" };
-                    campPopUp.SetText(message);
-                    campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
-                    campPopUp.AddButton(packButton);
-                    campPopUp.AddButton(restButton);                    
-                    campPopUp.AddButton(cancelButton);
-                    campPopUp.Show();
-                }
-                else
-                {
-                    ClimateCalories.camping = true;
-                    DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
-                }
+                DaggerfallUI.MessageBox("There are enemies nearby.");
             }
             else
             {
-                ClimateCalories.camping = true;
-                DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
-            }
+                if (!GameManager.Instance.AreEnemiesNearby(true) && ironmanOptionsCamp)
+                {
+                    Debug.Log("[Climates&Calories] Sending mod message to Ironman Options.");
+
+                    ModManager.Instance.SendModMessage("Ironman Options", "campSave");
+                }
+                DaggerfallMessageBox campPopUp = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+                if (Fire != null)
+                {
+                    if (hit.transform.gameObject.GetInstanceID() == Fire.GetInstanceID())
+                    {
+                        string[] message = { "Do you wish to rest, cook or pack?" };
+                        campPopUp.SetText(message);
+                        campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                        campPopUp.AddButton(restButton);
+                        campPopUp.AddButton(cookButton);
+                        campPopUp.AddButton(packButton);
+                        campPopUp.AddButton(cancelButton);
+                        campPopUp.Show();
+                    }
+                    else
+                    {
+                        ClimateCalories.camping = true;
+                        DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+                    }
+                }
+                else
+                {
+                    if (!GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding)
+                    {
+                        string[] message = { "Do you wish to rest or cook?" };
+                        campPopUp.SetText(message);
+                        campPopUp.OnButtonClick += CampPopUp_OnButtonClick;
+                        campPopUp.AddButton(restButton);
+                        campPopUp.AddButton(cookButton);
+                        campPopUp.AddButton(cancelButton);
+                        campPopUp.Show();
+                    }
+                    else
+                    {
+                        ClimateCalories.camping = true;
+                        DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenRestWindow);
+                    }
+
+                }
+            }           
         }
 
         private static void CampPopUp_OnButtonClick(DaggerfallMessageBox sender, DaggerfallMessageBox.MessageBoxButtons messageBoxButton)
@@ -179,39 +219,94 @@ namespace ClimatesCalories
             if (messageBoxButton == restButton)
             {
                 sender.CloseWindow();
-                if (GameManager.Instance.AreEnemiesNearby(true))
+                IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
+                ClimateCalories.camping = true;
+                uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
+            }
+            else if (messageBoxButton == cookButton)
+            {
+                List<DaggerfallUnityItem> skillets = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Skillet);
+                if (skillets.Count >= 1)
+                    usedSkillet = skillets[0];
+
+                rawFood = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ItemRawMeat.templateIndex);
+                rawFish = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ItemRawFish.templateIndex);
+                foreach (DaggerfallUnityItem rawFishItem in rawFish)
                 {
-                    DaggerfallUI.MessageBox("There are enemies nearby.");
+                    rawFood.Add(rawFishItem);
                 }
+
+                DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
+                validItemPicker.OnItemPicked += Cook_OnItemPicked;
+                foreach (DaggerfallUnityItem rawFoodItem in rawFood)
+                {
+                    validItemPicker.ListBox.AddItem(rawFoodItem.shortName);
+                }
+
+                if (validItemPicker.ListBox.Count > 0)
+                    uiManager.PushWindow(validItemPicker);
                 else
-                {
-                    IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
-                    ClimateCalories.camping = true;
-                    uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
-                }
+                    DaggerfallUI.MessageBox("You have nothing to cook.");
+ 
             }
             else if (messageBoxButton == packButton)
             {
-                if (!GameManager.Instance.PlayerEnterExit.IsPlayerInside && GameManager.Instance.AreEnemiesNearby(true))
-                {
-                    DaggerfallUI.MessageBox("There are enemies nearby.");
-                }
-                else
-                {
-                    DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
-                    CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
-                    DestroyCamp();
-                    GameManager.Instance.PlayerEntity.Items.AddItem(CampEquip);
-                    CampDeployed = false;
-                    FireLit = false;
-                    TentMatrix = new Matrix4x4();
-                    sender.CloseWindow();
-                }
+                DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
+                CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
+                DestroyCamp();
+                GameManager.Instance.PlayerEntity.Items.AddItem(CampEquip);
+                CampDeployed = false;
+                FireLit = false;
+                TentMatrix = new Matrix4x4();
+                sender.CloseWindow();
             }
             else
             {
                 sender.CloseWindow();
             }
+        }
+
+        private static void Cook_OnItemPicked(int index, string itemName)
+        {
+            DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
+            DaggerfallUI.UIManager.PopWindow();
+            int cookTime = 30;
+            int cookedTemplateIndex = ItemMeat.templateIndex;
+            if (usedSkillet != null)
+            {
+                cookTime /= 2;
+                usedSkillet.currentCondition -= 1;
+            }
+
+            DaggerfallUnityItem rawItem = rawFood[index];
+            if (rawItem.TemplateIndex == ItemRawFish.templateIndex)
+                cookedTemplateIndex = ItemCookedFish.templateIndex;
+            DaggerfallUnityItem cookedItem = ItemBuilder.CreateItem(ItemGroups.UselessItems2, cookedTemplateIndex);
+            DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * cookTime);
+
+            GameManager.Instance.PlayerEntity.Items.RemoveItem(rawItem);
+            switch ((rawItem as AbstractItemFood).FoodStatus)
+            {
+                case AbstractItemFood.StatusFresh:
+                case AbstractItemFood.StatusStale:
+                default:
+                    break;
+                case AbstractItemFood.StatusMouldy:
+                    (cookedItem as AbstractItemFood).RotFood();
+                    break;
+                case AbstractItemFood.StatusRotten:
+                    (cookedItem as AbstractItemFood).RotFood();
+                    (cookedItem as AbstractItemFood).RotFood();
+                    break;
+                case AbstractItemFood.StatusPutrid:
+                    (cookedItem as AbstractItemFood).RotFood();
+                    (cookedItem as AbstractItemFood).RotFood();
+                    (cookedItem as AbstractItemFood).RotFood();
+                    break;
+            }
+            GameManager.Instance.PlayerEntity.Items.AddItem(cookedItem);
+            string cookingTool = (usedSkillet != null) ? "Using your skillet" : "Having no skillet";
+            DaggerfallUI.MessageBox(cookingTool + ", you spend " + cookTime.ToString() + " minutes cooking a piece of " + cookedItem.shortName + "." );
         }
 
         public static void DestroyCamp()
@@ -233,7 +328,7 @@ namespace ClimatesCalories
         private static void SetTentPositionAndRotation()
         {
             GameObject player = GameManager.Instance.PlayerObject;
-            TentPosition = player.transform.position + (player.transform.forward * 3);
+            TentPosition = player.transform.position + (player.transform.forward * 2);
             TentMatrix = player.transform.localToWorldMatrix;
 
             RaycastHit hit;

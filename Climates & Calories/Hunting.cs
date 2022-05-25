@@ -47,20 +47,20 @@ namespace ClimatesCalories
                     if (enemyEntity != null)
                     {
                         bool humanoid = HumanoidCheck(enemyEntity.MobileEnemy.ID);
-                        if (enemyEntity.MobileEnemy.Affinity == MobileAffinity.Animal)
+                        if (enemyEntity.MobileEnemy.Affinity == MobileAffinity.Animal || enemyEntity.MobileEnemy.ID == (int)MobileTypes.Slaughterfish)
                         {
                             int meatAmount = GetMeatAmount(enemyEntity.MobileEnemy.ID);
                             for (int i = 0; i < meatAmount; i++)
                             {
-                                DaggerfallUnityItem meat = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex);
+                                DaggerfallUnityItem rawMeat = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemRawMeat.templateIndex);
                                 if (enemyEntity.MobileEnemy.ID != (int)MobileTypes.GrizzlyBear && enemyEntity.MobileEnemy.ID != (int)MobileTypes.SabertoothTiger)
                                 {
-                                    AbstractItemFood food = meat as AbstractItemFood;
+                                    AbstractItemFood food = rawMeat as AbstractItemFood;
                                     food.RotFood();
                                     if (Dice100.SuccessRoll(50))
                                         food.RotFood();
                                 }
-                                entityBehaviour.CorpseLootContainer.Items.AddItem(meat);
+                                entityBehaviour.CorpseLootContainer.Items.AddItem(rawMeat);
                             }
                         }
                         else if (enemyEntity.MobileEnemy.Affinity == MobileAffinity.Human || humanoid)
@@ -89,16 +89,17 @@ namespace ClimatesCalories
             switch (enemyID)
             {
                 case (int)MobileTypes.GrizzlyBear:
-                    meatAmount = UnityEngine.Random.Range(2, (2 + luck));
+                    meatAmount = UnityEngine.Random.Range(10, (20 + luck));
                     break;
                 case (int)MobileTypes.SabertoothTiger:
-                    meatAmount = UnityEngine.Random.Range(1, (2 + luck));
+                    meatAmount = UnityEngine.Random.Range(8, (10 + luck));
                     break;
                 case (int)MobileTypes.GiantScorpion:
-                    meatAmount = UnityEngine.Random.Range(1, (luck));
+                case (int)MobileTypes.Slaughterfish:
+                    meatAmount = UnityEngine.Random.Range(4, (4 +luck));
                     break;
                 case (int)MobileTypes.Spider:
-                    meatAmount = 1;
+                    meatAmount = 2;
                     break;
                 case (int)MobileTypes.Rat:
                     meatAmount = 1;
@@ -136,7 +137,7 @@ namespace ClimatesCalories
                     food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemMeat.templateIndex);
                     break;
                 case 9:
-                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemFish.templateIndex);
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemRawFish.templateIndex);
                     break;
                 case 8:
                 case 7:
@@ -146,7 +147,7 @@ namespace ClimatesCalories
                     food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemBread.templateIndex);
                     break;
                 case 5:
-                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemSaltedFish.templateIndex);
+                    food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemCookedFish.templateIndex);
                     break;
                 case 4:
                 case 3:
@@ -157,7 +158,7 @@ namespace ClimatesCalories
                         if (roll > 2)
                         {
                             food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 539);
-                            food.weightInKg -= UnityEngine.Random.Range(0.1f, 1.8f);
+                            food.stackCount -= UnityEngine.Random.Range(1, 3);
                         }
                         else
                             food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemOrange.templateIndex);
@@ -328,7 +329,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                         playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                         playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                     }
@@ -347,7 +348,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "While searching the rocks, you come upon a sleeping snake.", "Your hand shoots out, grabbing the snakes tail.", "You whip it around and smack it into a rock.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                         playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                         playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     }
@@ -375,7 +376,7 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "You poke the snake to make sure it is dead before picking it up.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                         playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     }
                     else if (huntingRoll < skillSum)
@@ -383,7 +384,7 @@ namespace ClimatesCalories
                         string[] messages = new string[] { "You spot a snake among the rocks. You take careful aim and nail it with an arrow.", "", "As you pick up the dead snake, it suddenly twitches and sinks its fangs into your hand.", "You spend some time butchering the snake.", "", "You hope the snake was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
                         DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                         playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     }
                     else
@@ -402,14 +403,14 @@ namespace ClimatesCalories
                     {
                         string[] messages = new string[] { "While searching the rocks, you come upon a snake.", "Before the snake has time to lunge, your grab it.", "You whip the snake around and smack it into a rock.", "", "You spend some time butchering the snake." };
                         ClimateCalories.TextPopup(messages);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                     }
                     else if (huntingRoll < skillSum)
                     {
                         string[] messages = new string[] { "While searching the rocks, you come upon a snake.", "Its head shoots out, sinking its fangs into your hand.", "You whip it around and smack it into a rock.", "", "You spend some time butchering the snake.", "", "You hope the snake was not poisonous..." };
                         ClimateCalories.TextPopup(messages);
                         DaggerfallWorkshop.Game.Formulas.FormulaHelper.InflictPoison(playerEntity, playerEntity, poisonType, false);
-                        GiveMeat(1);
+                        GiveRawMeat(1);
                     }
                     else
                     {
@@ -661,7 +662,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(2, 3);
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", "but you manage to loose several more arrows before they are out of range.", "", "You pick up the " + meat.ToString() + " dead birds and spend some time preparing them." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -669,7 +670,7 @@ namespace ClimatesCalories
                 {
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, readying your bow and arrow.", "You loose the arrow, piercing one of the birds. The rest take flight", " and your next shot goes wide of your prey. They are soon out of range.", "", "You collect the dead bird and spend some time preparing it." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(1);
+                    GiveRawMeat(1);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -687,7 +688,7 @@ namespace ClimatesCalories
                 {
                     string[] messages = new string[] { "You slowly and quietly sneak towards the birds, preparing to strike.", "You leap forward, attempting to reach your mark before it takes off.", "Your strike connect with a satisfying sound, the rest of the flock quickly flies away.", "", "You collect the dead bird and spend some time preparing it." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(1);
+                    GiveRawMeat(1);
                     playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -736,7 +737,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "", "Another ripple in the water appear and you release an arrow.", "", "You pull your scaly prey out of the swamp and butcher it." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -755,7 +756,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You sneak up to the waters edge and keep completely still.", "Time goes by while you stare intently at the water.", "Your strike connect with a satisfying sound, and leverage the struggling lizard out of the water.", "", "You spend some time butchering the animal." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -854,7 +855,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(2, 3);
                     string[] messages = new string[] { "You track a set of deer prints for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The deer takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -862,7 +863,7 @@ namespace ClimatesCalories
                 {
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and stay perfectly still.", "", "After some time, you get a clear shot and your arrow pierces the animal." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(1);
+                    GiveRawMeat(1);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -891,7 +892,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -984,7 +985,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(2, 3);
                     string[] messages = new string[] { "You follow the trail of a mountain goat for some time.", "As you get within range, you knock an arrow and wait for the right moment.", "", "Your arrow flies true. The goat takes a few steps and collapses." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -992,7 +993,7 @@ namespace ClimatesCalories
                 {
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and stay perfectly still.", "", "After some time, you get a clear shot and your arrow pierces the animal." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(1);
+                    GiveRawMeat(1);
                     playerEntity.TallySkill(DFCareer.Skills.Archery, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -1021,7 +1022,7 @@ namespace ClimatesCalories
                     int meat = UnityEngine.Random.Range(1, 2);
                     string[] messages = new string[] { "You find traces of rabbits in the area.", "You spot movement in the underbrush and attempt to get closer.", "", "After some time, you have the animal within range and you lunge!", "", "You kill the rabbit in a single strike." };
                     ClimateCalories.TextPopup(messages);
-                    GiveMeat(meat);
+                    GiveRawMeat(meat);
                     playerEntity.TallySkill(DFCareer.Skills.CriticalStrike, 1);
                     playerEntity.TallySkill(DFCareer.Skills.Stealth, 1);
                 }
@@ -1043,6 +1044,16 @@ namespace ClimatesCalories
             }
         }
 
+
+        private static void GiveRawMeat(int meatAmount)
+        {
+            for (int i = 0; i < meatAmount; i++)
+            {
+                GameManager.Instance.PlayerEntity.Items.AddItem(ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemRawMeat.templateIndex));
+            }
+            ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");
+            DaggerfallUI.AddHUDText("You gain " + meatAmount.ToString() + " pieces of Raw Meat.");
+        }
 
         private static void GiveMeat(int meatAmount)
         {            
@@ -1099,7 +1110,7 @@ namespace ClimatesCalories
                 skipAmount = UnityEngine.Random.Range(10, 30);
 
             DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(DaggerfallDateTime.SecondsPerMinute * skipAmount);
-            playerEntity.DecreaseFatigue(UnityEngine.Random.Range(10, 50), true);
+            playerEntity.DecreaseFatigue(PlayerEntity.DefaultFatigueLoss * skipAmount);
         }
 
         private static void SpawnBeast()

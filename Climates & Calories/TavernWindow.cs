@@ -34,11 +34,13 @@ namespace ClimatesCalories
         #region UI Controls
 
         Panel mainPanel = new Panel();
-        //protected new Button roomButton;
-        //protected new Button talkButton;
         protected new Button foodButton;
         protected Button drinksButton;
-        //protected new Button exitButton;
+        protected TextLabel roomLabel = new TextLabel();
+        protected TextLabel talkLabel = new TextLabel();
+        protected TextLabel foodLabel = new TextLabel();
+        protected TextLabel drinksLabel = new TextLabel();
+        protected TextLabel goodbyeLabel = new TextLabel();
 
         #endregion
 
@@ -50,18 +52,12 @@ namespace ClimatesCalories
 
         #region Fields
 
-        const string baseTextureName = "RALZARTAVERN";
+        const string baseTextureName = "BLANKMENU_TAVERN";
         const int tooManyDaysFutureId = 16;
         const int offerPriceId = 262;
         const int notEnoughGoldId = 454;
         const int howManyAdditionalDaysId = 5100;
         const int howManyDaysId = 5102;
-
-        //protected new StaticNPC merchantNPC;
-        //protected new PlayerGPS.DiscoveredBuilding buildingData;
-        //protected new RoomRental_v1 rentedRoom;
-        //protected new int daysToRent = 0;
-        //protected new int tradePrice = 0;
 
         bool isCloseWindowDeferred = false;
         bool isTalkWindowDeferred = false;
@@ -97,30 +93,55 @@ namespace ClimatesCalories
             mainPanel.Size = new Vector2(130, 53);
 
             // Room button
+            roomLabel.Position = new Vector2(0, 1);
+            roomLabel.ShadowPosition = Vector2.one;
+            roomLabel.HorizontalAlignment = HorizontalAlignment.Center;
+            roomLabel.Text = "ROOM";
             roomButton = DaggerfallUI.AddButton(roomButtonRect, mainPanel);
+            roomButton.Components.Add(roomLabel);
             roomButton.OnMouseClick += RoomButton_OnMouseClick;
             //roomButton.Hotkey = DaggerfallShortcut.GetBinding(DaggerfallShortcut.Buttons.TavernRoom);
 
             // Talk button
+            talkLabel.Position = new Vector2(0, 10);
+            talkLabel.ShadowPosition = Vector2.one;
+            talkLabel.HorizontalAlignment = HorizontalAlignment.Center;
+            talkLabel.Text = "TALK";
             talkButton = DaggerfallUI.AddButton(talkButtonRect, mainPanel);
+            talkButton.Components.Add(talkLabel);
             talkButton.OnMouseClick += TalkButton_OnMouseClick;
             //talkButton.Hotkey = DaggerfallShortcut.GetBinding(DaggerfallShortcut.Buttons.TavernTalk);
             talkButton.OnKeyboardEvent += TalkButton_OnKeyboardEvent;
 
             // Food button
+            foodLabel.Position = new Vector2(0, 19);
+            foodLabel.ShadowPosition = Vector2.one;
+            foodLabel.HorizontalAlignment = HorizontalAlignment.Center;
+            foodLabel.Text = "FOOD";
             foodButton = DaggerfallUI.AddButton(foodButtonRect, mainPanel);
+            foodButton.Components.Add(foodLabel);
             foodButton.OnMouseClick += FoodButton_OnMouseClick;
             //foodButton.Hotkey = DaggerfallShortcut.GetBinding(DaggerfallShortcut.Buttons.TavernFood);
             foodButton.OnKeyboardEvent += FoodButton_OnKeyboardEvent;
 
             // Drinks button
+            drinksLabel.Position = new Vector2(0, 1);
+            roomLabel.ShadowPosition = Vector2.one;
+            drinksLabel.HorizontalAlignment = HorizontalAlignment.Center;
+            drinksLabel.Text = "DRINKS";
             drinksButton = DaggerfallUI.AddButton(drinksButtonRect, mainPanel);
+            drinksButton.Components.Add(drinksLabel);
             drinksButton.OnMouseClick += DrinksButton_OnMouseClick;
             //drinksButton.Hotkey = DaggerfallShortcut.GetBinding(DaggerfallShortcut.Buttons.TavernFood);
             drinksButton.OnKeyboardEvent += FoodButton_OnKeyboardEvent;
 
             // Exit button
+            goodbyeLabel.Position = new Vector2(0, 10);
+            goodbyeLabel.ShadowPosition = Vector2.one;
+            goodbyeLabel.HorizontalAlignment = HorizontalAlignment.Center;
+            goodbyeLabel.Text = "GOODBYE";
             exitButton = DaggerfallUI.AddButton(exitButtonRect, mainPanel);
+            drinksButton.Components.Add(goodbyeLabel);
             exitButton.OnMouseClick += ExitButton_OnMouseClick;
             //exitButton.Hotkey = DaggerfallShortcut.GetBinding(DaggerfallShortcut.Buttons.TavernExit);
             exitButton.OnKeyboardEvent += ExitButton_OnKeyboardEvent;

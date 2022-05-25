@@ -6,8 +6,11 @@
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Entity;
+using DaggerfallWorkshop.Game.Formulas;
 using DaggerfallWorkshop.Game.Items;
+using DaggerfallWorkshop.Game.MagicAndEffects;
 using DaggerfallWorkshop.Game.Serialization;
+using DaggerfallWorkshop.Game.Utility;
 
 namespace ClimatesCalories
 {
@@ -104,6 +107,7 @@ namespace ClimatesCalories
             uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             uint hunger = gameMinutes - playerEntity.LastTimePlayerAteOrDrankAtTavern;
             uint cals = GetCalories() / ((uint)FoodStatus + 1);
+            string feel = "invigorated";
 
             if (FoodStatus == StatusPutrid)
             {
@@ -119,7 +123,25 @@ namespace ClimatesCalories
 
                 collection.RemoveItem(this);
                 DaggerfallUI.MessageBox(string.Format("You eat the {0}.", shortName));
-                DaggerfallUI.AddHUDText("You feel invigorated by the meal.");
+
+                if (FoodStatus > StatusStale || (TemplateIndex == ItemRawMeat.templateIndex || TemplateIndex == ItemRawFish.templateIndex))
+                {
+                    feel = TemplateIndex == ItemRawMeat.templateIndex ? "nauseated" : "invigorated";
+                    bool unlucky = Dice100.SuccessRoll(playerEntity.Stats.LiveLuck);
+                    if (unlucky || (TemplateIndex == ItemRawMeat.templateIndex || TemplateIndex == ItemRawFish.templateIndex))
+                    {
+                        feel = "disgusted";
+                        Diseases[] diseaseListA = { Diseases.StomachRot };
+                        Diseases[] diseaseListB = { Diseases.StomachRot, Diseases.SwampRot, Diseases.BloodRot, Diseases.Cholera, Diseases.YellowFever };
+                        if (FoodStatus > StatusMouldy)
+                            FormulaHelper.InflictDisease(playerEntity as DaggerfallEntity, playerEntity as DaggerfallEntity, diseaseListB);
+                        else
+                            FormulaHelper.InflictDisease(playerEntity as DaggerfallEntity, playerEntity as DaggerfallEntity, diseaseListA);
+                    }
+                }
+                
+
+                DaggerfallUI.AddHUDText("You feel " + feel + " by the meal.");
             }
             else
             {
@@ -241,45 +263,45 @@ namespace ClimatesCalories
     }
 
     //Fish
-    public class ItemFish : AbstractItemFood
+    public class ItemRawFish : AbstractItemFood
     {
         public const int templateIndex = 535;
 
-        public ItemFish() : base(ItemGroups.UselessItems2, templateIndex)
+        public ItemRawFish() : base(ItemGroups.UselessItems2, templateIndex)
         {
         }
 
         public override uint GetCalories()
         {
-            return 180;
+            return 90;
         }
 
         public override ItemData_v1 GetSaveData()
         {
             ItemData_v1 data = base.GetSaveData();
-            data.className = typeof(ItemFish).ToString();
+            data.className = typeof(ItemRawFish).ToString();
             return data;
         }
     }
 
     //Salted Fish
-    public class ItemSaltedFish : AbstractItemFood
+    public class ItemCookedFish : AbstractItemFood
     {
         public const int templateIndex = 536;
 
-        public ItemSaltedFish() : base(ItemGroups.UselessItems2, templateIndex)
+        public ItemCookedFish() : base(ItemGroups.UselessItems2, templateIndex)
         {
         }
 
         public override uint GetCalories()
         {
-            return 120;
+            return 200;
         }
 
         public override ItemData_v1 GetSaveData()
         {
             ItemData_v1 data = base.GetSaveData();
-            data.className = typeof(ItemSaltedFish).ToString();
+            data.className = typeof(ItemCookedFish).ToString();
             return data;
         }
     }
@@ -303,6 +325,38 @@ namespace ClimatesCalories
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemMeat).ToString();
             return data;
+        }
+    }
+
+    //Raw Meat
+    public class ItemRawMeat : AbstractItemFood
+    {
+        public const int templateIndex = 538;
+
+        public ItemRawMeat() : base(ItemGroups.UselessItems2, templateIndex)
+        {
+        }
+
+        public override uint GetCalories()
+        {
+            return 100;
+        }
+
+        public override ItemData_v1 GetSaveData()
+        {
+            ItemData_v1 data = base.GetSaveData();
+            data.className = typeof(ItemRawMeat).ToString();
+            return data;
+        }
+    }
+
+    public class ItemRations : DaggerfallUnityItem
+    {
+        public const int templateIndex = ClimateCalories.templateIndex_Rations;
+
+        public override bool IsStackable()
+        {
+            return true;
         }
     }
 
