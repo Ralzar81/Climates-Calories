@@ -354,9 +354,27 @@ namespace ClimatesCalories
     {
         public const int templateIndex = ClimateCalories.templateIndex_Rations;
 
+        public ItemRations() : base(ItemGroups.UselessItems2, templateIndex)
+        {
+        }
+
         public override bool IsStackable()
         {
             return true;
+        }
+
+        public override bool UseItem(ItemCollection collection)
+        {
+            DaggerfallUI.MessageBox(string.Format("When too hungry, you will eat some rations."));
+            return true;
+        }
+
+
+        public override ItemData_v1 GetSaveData()
+        {
+            ItemData_v1 data = base.GetSaveData();
+            data.className = typeof(ItemRations).ToString();
+            return data;
         }
     }
 

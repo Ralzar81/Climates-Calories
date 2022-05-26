@@ -220,7 +220,6 @@ namespace ClimatesCalories
             itemHelper.RegisterCustomItem(templateIndex_CampEquip, ItemGroups.UselessItems2);
             itemHelper.RegisterCustomItem(templateIndex_Waterskin, ItemGroups.UselessItems2);
             itemHelper.RegisterItemUseHandler(templateIndex_Waterskin, UseAutoItem);
-            itemHelper.RegisterItemUseHandler(templateIndex_Rations, UseAutoItem);
             itemHelper.RegisterCustomItem(templateIndex_Skillet, ItemGroups.UselessItems2);
             itemHelper.RegisterItemUseHandler(templateIndex_Skillet, UseAutoItem);
 
