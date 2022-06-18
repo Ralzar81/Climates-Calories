@@ -70,6 +70,7 @@ namespace ClimatesCalories
                 if (rations && starvCounter > 24)
                 {
                     EatRation();
+                    starving = false;
                 }
                 else if (!rations && starvCounter > 5)
                 {
@@ -84,20 +85,20 @@ namespace ClimatesCalories
 
         static private void EatRation()
         {
-            List<DaggerfallUnityItem> sacks = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
+            ItemCollection playerItems = GameManager.Instance.PlayerEntity.Items;
+            List<DaggerfallUnityItem> sacks = playerItems.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
             if (sacks.Count >= 1)
             {
                 DaggerfallUnityItem sack = sacks[0];
-                if (!GameManager.IsGamePaused)
-                {
-                    DaggerfallUI.AddHUDText("You eat some rations.");
-                }
+                DaggerfallUI.AddHUDText("You eat some rations.");
+                playerEntity.LastTimePlayerAteOrDrankAtTavern = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime() - 250;
                 if (sack.stackCount == 1)
                 {
-                    GameManager.Instance.PlayerEntity.Items.RemoveItem(sack);
                     DaggerfallUI.MessageBox(string.Format("You empty your sack of rations."));
+                    playerItems.RemoveItem(sack);
                 }
-                sack.stackCount -= 1;
+                else
+                    sack.stackCount -= 1;
             }
             //foreach (DaggerfallUnityItem sack in sacks)
             //{

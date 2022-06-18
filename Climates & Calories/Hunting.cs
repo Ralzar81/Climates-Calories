@@ -89,10 +89,10 @@ namespace ClimatesCalories
             switch (enemyID)
             {
                 case (int)MobileTypes.GrizzlyBear:
-                    meatAmount = UnityEngine.Random.Range(10, (20 + luck));
+                    meatAmount = UnityEngine.Random.Range(8, (15 + luck));
                     break;
                 case (int)MobileTypes.SabertoothTiger:
-                    meatAmount = UnityEngine.Random.Range(8, (10 + luck));
+                    meatAmount = UnityEngine.Random.Range(6, (10 + luck));
                     break;
                 case (int)MobileTypes.GiantScorpion:
                 case (int)MobileTypes.Slaughterfish:
@@ -128,7 +128,7 @@ namespace ClimatesCalories
 
         private static DaggerfallUnityItem FoodLoot()
         {
-            DaggerfallUnityItem food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531);
+            DaggerfallUnityItem food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemRations.templateIndex);
             int roll = UnityEngine.Random.Range(1, 11);
 
             switch (roll)
@@ -141,7 +141,7 @@ namespace ClimatesCalories
                     break;
                 case 8:
                 case 7:
-                    food.weightInKg -= UnityEngine.Random.Range(1.0f, 3.0f);
+                    food.stackCount = UnityEngine.Random.Range(1, 4);
                     break;
                 case 6:
                     food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemBread.templateIndex);
@@ -157,8 +157,8 @@ namespace ClimatesCalories
                     {
                         if (roll > 2)
                         {
-                            food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 539);
-                            food.stackCount -= UnityEngine.Random.Range(1, 3);
+                            food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 539); //waterskin
+                            food.weightInKg = 1f;
                         }
                         else
                             food = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ItemOrange.templateIndex);

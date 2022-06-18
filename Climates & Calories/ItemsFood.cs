@@ -356,6 +356,7 @@ namespace ClimatesCalories
 
         public ItemRations() : base(ItemGroups.UselessItems2, templateIndex)
         {
+            stackCount = UnityEngine.Random.Range(2, 10);
         }
 
         public override bool IsStackable()
