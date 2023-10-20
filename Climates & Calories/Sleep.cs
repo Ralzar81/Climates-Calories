@@ -8,6 +8,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop;
 using UnityEngine;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
+using DaggerfallWorkshop.Game.Banking;
 
 namespace ClimatesCalories
 {
@@ -25,6 +26,7 @@ namespace ClimatesCalories
         static public uint awakeOrAsleepHours = 0;
         static private bool awake = true;
         static private uint currentTime = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
+        static private bool campSleep = false;
 
         static public void SleepCheck(int sleepTemp = 0)
         {
@@ -37,12 +39,14 @@ namespace ClimatesCalories
                 sleepyCounter = 0;
                 return;
             }
-            if (playerEntity.IsResting && !playerEntity.IsLoitering && (playerEnterExit.IsPlayerInsideBuilding || ClimateCalories.camping))
+            if (playerEntity.IsResting && !playerEntity.IsLoitering && (playerEnterExit.IsPlayerInsideBuilding || campSleep))
             {
+                campSleep = ClimateCalories.camping;
                 Sleeping(sleepTemp);
             }
             else if (playerEntity.IsResting && !playerEntity.IsLoitering)
             {
+                campSleep = ClimateCalories.camping;
                 Sleeping(sleepTemp+20);
             }
             else
@@ -57,6 +61,23 @@ namespace ClimatesCalories
                 wakeOrSleepTime = currentTime;
                 if (sleepyCounter > 0)
                     DaggerfallUI.AddHUDText("You need more rest...");
+                int qualityPenalty = 10;
+                if (playerEnterExit.IsPlayerInsideBuilding)
+                {
+                    int quality = (int)playerEnterExit.Interior.BuildingData.Quality;
+                    qualityPenalty -= quality;
+                    if (quality < 6)
+                        DaggerfallUI.AddHUDText("You slept poorly.");
+                    if (quality > 14)
+                        DaggerfallUI.AddHUDText("Your rest was excellent.");
+                }
+                else if (!campSleep)
+                {
+                    qualityPenalty = 20;
+                    DaggerfallUI.AddHUDText("You slept very poorly.");
+                }
+                campSleep = false;    
+                sleepyCounter += qualityPenalty;
             }
            // Debug.Log("[Climates & Calories] NotResting()");
             gameMinutes = currentTime;

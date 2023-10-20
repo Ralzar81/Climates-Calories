@@ -193,7 +193,7 @@ namespace ClimatesCalories
                 }
                 else
                 {
-                    if (!GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding)
+                    if (!GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding || GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
                     {
                         string[] message = { "Do you wish to rest or cook?" };
                         campPopUp.SetText(message);
@@ -221,6 +221,7 @@ namespace ClimatesCalories
                 sender.CloseWindow();
                 IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
                 ClimateCalories.camping = true;
+                ClimateCalories.cooking = false;
                 uiManager.PushWindow(new DaggerfallRestWindow(uiManager, true));
             }
             else if (messageBoxButton == cookButton)
@@ -251,6 +252,7 @@ namespace ClimatesCalories
             }
             else if (messageBoxButton == packButton)
             {
+                ClimateCalories.cooking = false;
                 DaggerfallUnityItem CampEquip = ItemBuilder.CreateItem(ItemGroups.UselessItems2, ClimateCalories.templateIndex_CampEquip);
                 CampEquip.LowerCondition(CampDmg, GameManager.Instance.PlayerEntity);
                 DestroyCamp();
@@ -262,12 +264,14 @@ namespace ClimatesCalories
             }
             else
             {
+                ClimateCalories.cooking = false;
                 sender.CloseWindow();
             }
         }
 
         private static void Cook_OnItemPicked(int index, string itemName)
         {
+            ClimateCalories.cooking = true;
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
             DaggerfallUI.UIManager.PopWindow();
             int cookTime = 30;
@@ -307,6 +311,11 @@ namespace ClimatesCalories
             GameManager.Instance.PlayerEntity.Items.AddItem(cookedItem);
             string cookingTool = (usedSkillet != null) ? "Using your skillet" : "Having no skillet";
             DaggerfallUI.MessageBox(cookingTool + ", you spend " + cookTime.ToString() + " minutes cooking a piece of " + cookedItem.shortName + "." );
+            if (usedSkillet != null && usedSkillet.currentCondition <= 0)
+            {
+                GameManager.Instance.PlayerEntity.Items.RemoveItem(usedSkillet);
+                DaggerfallUI.MessageBox("Your skillet broke.");
+            }
         }
 
         public static void DestroyCamp()

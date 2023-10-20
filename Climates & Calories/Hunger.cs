@@ -47,6 +47,8 @@ namespace ClimatesCalories
             gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
             if (playerEntity.IsInBeastForm)
                 ateTime = gameMinutes;
+            else if (ClimateCalories.isVampire)
+                ateTime = gameMinutes - 250;
             else
                 ateTime = GameManager.Instance.PlayerEntity.LastTimePlayerAteOrDrankAtTavern;
             hunger = gameMinutes - ateTime;
@@ -124,7 +126,24 @@ namespace ClimatesCalories
         {
             List<DaggerfallUnityItem> sacks = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.UselessItems2, ClimateCalories.templateIndex_Rations);
             if (sacks.Count >= 1)
+            {
+                if (sacks.Count > 1)
+                {
+                    int stackSum = 0;
+                    //Check ration items to clean up buggy items
+                    foreach (DaggerfallUnityItem sack in sacks)
+                    {
+                        stackSum += sack.stackCount;
+                        playerEntity.Items.RemoveItem(sack);
+                    }
+                    DaggerfallUnityItem newSack = ItemBuilder.CreateItem(ItemGroups.UselessItems2, 531);
+                    newSack.stackCount = stackSum;
+                    playerEntity.Items.AddItem(newSack);
+                }
+                
                 return true;
+            }
+                
 
             return false;
         }
@@ -203,9 +222,8 @@ namespace ClimatesCalories
                     foodCount = 0;
                 }
             }
-            else if (!hungry)
+            else if (!hungry && !ClimateCalories.isVampire)
             {
-                Debug.Log("Stomache message triggers.");
                 hungry = true;
                 DaggerfallUI.AddHUDText("Your stomach rumbles...");
                 ModManager.Instance.SendModMessage("TravelOptions", "pauseTravel");

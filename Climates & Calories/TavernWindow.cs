@@ -824,11 +824,13 @@ namespace ClimatesCalories
             {
                 DaggerfallUI.AddHUDText("The drink fortifies you.");
                 playerEntity.IncreaseFatigue(alcohol, true);
+                playerEntity.IncreaseMagicka(alcohol);
             }
             else
             {
                 DaggerfallUI.AddHUDText("The drink refreshes you.");
                 playerEntity.IncreaseFatigue(5, true);
+                playerEntity.IncreaseMagicka(alcohol);
             }
         }
 

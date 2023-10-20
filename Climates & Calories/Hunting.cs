@@ -89,24 +89,33 @@ namespace ClimatesCalories
             switch (enemyID)
             {
                 case (int)MobileTypes.GrizzlyBear:
-                    meatAmount = UnityEngine.Random.Range(8, (15 + luck));
+                    meatAmount = UnityEngine.Random.Range(6, (10 + luck));
                     break;
                 case (int)MobileTypes.SabertoothTiger:
-                    meatAmount = UnityEngine.Random.Range(6, (10 + luck));
+                case 263: //Snow Wolf
+                    meatAmount = UnityEngine.Random.Range(4, (8 + luck));
                     break;
                 case (int)MobileTypes.GiantScorpion:
                 case (int)MobileTypes.Slaughterfish:
-                    meatAmount = UnityEngine.Random.Range(4, (4 +luck));
+                case 262: //Wolf
+                case 278: //Boar
+                case 280: //Mountain Lion
+                    meatAmount = UnityEngine.Random.Range(2, (3 +luck));
                     break;
                 case (int)MobileTypes.Spider:
+                case 267: //Dog
+                case 271: //Blood Spider
+                case 281: //Mudcrab
                     meatAmount = 2;
                     break;
                 case (int)MobileTypes.Rat:
                     meatAmount = 1;
                     break;
                 case (int)MobileTypes.GiantBat:
+                case 260:
                     meatAmount = 1;
                     break;
+
             }
             return meatAmount;
         }
@@ -186,7 +195,8 @@ namespace ClimatesCalories
             bool hasBow = false;
             List<DaggerfallUnityItem> sBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Short_Bow);
             List<DaggerfallUnityItem> lBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, (int)Weapons.Long_Bow);
-            hasBow = sBow.Count > 0 || lBow.Count > 0 ? true : false;
+            List<DaggerfallUnityItem> cBow = GameManager.Instance.PlayerEntity.Items.SearchItems(ItemGroups.Weapons, 289);
+            hasBow = sBow.Count > 0 || lBow.Count > 0 || cBow.Count > 0 ? true : false;
 
             return hasBow;
         }

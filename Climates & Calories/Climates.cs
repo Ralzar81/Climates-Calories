@@ -71,7 +71,7 @@ namespace ClimatesCalories
             {
                 if (skin.weightInKg < 2 && (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged || ClimateCalories.playerIsWading || playerEnterExit.BuildingType == DFLocation.BuildingTypes.Temple))
                 {
-                    ClimateCalories.RefillWater(10);
+                    ClimateCalories.RefillWater(10, true);
                 }
                 if (skin.weightInKg > 0.1)
                 {
@@ -645,7 +645,7 @@ namespace ClimatesCalories
                 {
                     ClimateCalories.wetCount = 300;
                 }
-                temp = (ClimateCalories.wetCount / 10);
+                temp = (ClimateCalories.wetCount / 20);
             }
             return temp;
         }
